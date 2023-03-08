@@ -56,5 +56,5 @@ The creators of the Cookiecutter project welcome contributions! [See the docs fo
 ### Installing development requirements
 ------------
 
-    pip install -r requirements.txt
+    pip3 install -r requirements.txt
 
