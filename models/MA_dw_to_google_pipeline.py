@@ -65,7 +65,7 @@ def load_data(data_dir, keep=['id', 'keywordStrings', 'lastModifiedDate', 'categ
 
     return df
 
-def truncate_data(df): #TODO needs fixing after sorting by dates
+def truncate_data(df): #TODO ?needs fixing after sorting by dates
     datetimes = pd.to_datetime(df['lastModifiedDate'])
     df['ts_lastModifiedDate']=datetimes
     #find start index for subset 2019-2022
@@ -89,67 +89,93 @@ def truncate_data(df): #TODO needs fixing after sorting by dates
 
     return df_subset
 
-def get_interest_over_time(keywords):#, start_date = '2019-01-01', end_date=f'{date.today()}'):
+#TODO fill in these funnctions based on Anyas and Magda's input
+# def extract_keywords(df):
+#     return keywords
+
+# def clean_keywords(keywords):
+#     return clean_keywords
+
+def get_interest_over_time(keyword, start_date = '2019-01-01', end_date=f'{date.today()}'):
     #keywords needs to be a list 
-    #need to make sure the total number of characters is less than 100 for Google
-    print('attempt')
-    terms = 0
-    chars = 0
-    for word in keywords:
-        chars += len(word)
-        if chars > 99:
-            break
-        else:
-            terms += 1
-    if terms > 5:
-        terms = 5
-    keywords = keywords[:terms]
-
+    #need to make sure the total number of characters is less than 100 for Google and terms are fewer than 5 
+    # terms = 0
+    # chars = 0
+    # for word in keywords:
+    #     chars += len(word)
+    #     if chars > 99:
+    #         break
+    #     else:
+    #         terms += 1
+    # if terms > 5:
+    #     terms = 5
+    # keywords = keywords[:terms]
+    print(keyword)
+    if len(keyword)>99:
+        print('KEYWORD IS TOO LONG FOR THIS SEARCH')
+        return None
     #let's get python trends 
-    print(keywords)
-    print(sum([len(i) for i in keywords]))
-
     pytrend = TrendReq()
-    google_df = pytrend.build_payload(kw_list= keywords)#, timeframe= '{} {}'.format(str(start_date),str(end_date)))
-    print('payload done')
+    google_df = pytrend.build_payload(kw_list= [keyword], timeframe= '{} {}'.format(str(start_date),str(end_date)))
     google_df = pytrend.interest_over_time()
-    print('innt oveere timee done')
-    google_df = google_df.drop('isPartial', axis = 'columns')
-    # turn the df into a dict so we can save it in the bigger 
-    google_dict = google_df.to_dict()
+    if 'isPartial' in df.columns:
+        google_df = google_df.drop('isPartial', axis = 'columns')
 
-    return google_dict
-    
+    return google_df
+
 
 @click.group()
 def cli():
     pass
 
-@click.command(name='dw-to-google')
+@click.command(name='dw-kw-to-google')
 @click.argument('db_path', type=click.Path(exists=True))
+@click.argument('kw_path', type=click.Path(exists=True))
 @click.option('--output', '-o', default=None)
-def cli_dw_to_google(db_path=None,
-                output=None):
+@click.option('--overwrite', default=False)
+def cli_dw_kw_to_google(db_path=None,
+                        kw_path=None,
+                        output=None,
+                        overwrite=False
+                        ):
 
     '''This function takes in the DW keywords and iterativeely 
     searchs for them for historical data on the Google API
     
-    Then it compares the two signals.
     Need to select an appropriate timescale to compare
     Need to select appropriate temporal resolution 
     '''
+    if kw_path == None or overwrite:
+        #let's load entire dataset and create keyword list from scratch 
+        df = load_data(db_path, keep=['id', 'keywordStrings', 'lastModifiedDate'])
+        # df = truncate_data(df) #let's keep entiree dataset for now?
+        keywords = extract_keywords(df)
+        keywords = clean_keywords(keywords)
+        kw_file_name = 'cleaned_keywords.npz'
+        np.save(op.join(output, kw_file_name), keywords)
+    else:
+        keywords = np.load(kw_path)
+
+    #make keywords into df and use .apply to get google dicts 
+    kw_df = pd.DataFrame({'keywords':keywords})
+    kw_df['google_trends'] = kw_df['keywords'].apply(get_interest_over_time, end_date=('2023-01-01'))
+
+    #TODO: decide if you will make many dataframes inside original df or one big one with dates an index- thee second is easy to get from the first one
+    # e.g.: new_big_df = pd.DataFrame({kw_df['keywords']: kw_df['google_trends']})
     
-    df = load_data(data_dir)
-    #for now let's not truncate- func needs fixing 
-    # df = truncate_data(df)
-    df = df.loc[:5,:] #let's just take 5 articles for now 
 
-    #let's get the relevant google search histories (saved as dicts), let's use apply to be faster
-    df['googleDict'] = df['keywordStrings'].apply(get_interest_over_time)
 
-    for i, el in enumerate(df['googleDict']):
-        
+    google_kw_file_name = 'dw_keywords_google_searches.npz'
+    np.savez(op.join(output, google_kw_file_name), kw_df)
 
+
+
+#TODO: WRITEE MORE MAIN FUNCTIONS TO:
+#TODO: implement time series extraction from DW data 
+
+#TODO: decide if you will impose a limit on how many mentions and above you will create timeseries
+
+#TODO: compare time series etc.
 
     
 cli.add_command(cli_dw_to_google)
