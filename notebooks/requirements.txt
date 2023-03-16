@@ -46,7 +46,7 @@ future==0.18.3
 fuzzywuzzy==0.18.0
 gast==0.4.0
 gdown==4.4.0
-gensim==4.2.0
+gensim==3.8.3
 google-auth==2.16.2
 google-auth-oauthlib==0.4.6
 google-pasta==0.2.0
@@ -210,6 +210,7 @@ Werkzeug==2.2.3
 widgetsnbextension==4.0.5
 Wikipedia-API==0.5.8
 wrapt==1.15.0
+xgboost==1.6.2
 xxhash==3.2.0
 yarl==1.8.2
 zipp==3.15.0
