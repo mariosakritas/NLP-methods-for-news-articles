@@ -46,7 +46,7 @@ future==0.18.3
 fuzzywuzzy==0.18.0
 gast==0.4.0
 gdown==4.4.0
-gensim==3.8.3
+gensim==4.2.0
 google-auth==2.16.2
 google-auth-oauthlib==0.4.6
 google-pasta==0.2.0
