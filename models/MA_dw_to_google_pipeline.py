@@ -114,7 +114,7 @@ def get_interest_over_time(keyword, start_date = '2019-01-01', end_date=f'{date.
 
     return google_df
 
-def get_dw_timeseries(df_clean, keyword, resolution = 'weekly', start_date = '2019-01-01', end_date = '2022-01-01'):
+def get_dw_timeseries(df_clean, keyword, resolution = 'weekly', start_date = '2019-01-01', end_date=f'{date.today()}'):
     #TODO: check this function after replacing loop 
     
     df_clean = truncate_data(df_clean, start_date, end_date)
@@ -125,7 +125,7 @@ def get_dw_timeseries(df_clean, keyword, resolution = 'weekly', start_date = '20
 
     df_clean = df_clean.drop(not_keyword_indices)
     df_clean['datetimes']= pd.to_datetime(df_clean['lastModifiedDate'])
-    df_clean['yearweek'] = df_clean['datetimes'].apply(lambda x: str(x.year)+str(x.week))
+    df_clean['yearweek'] = df_clean['dt_lastModifiedDate'].apply(lambda x: str(x.strftime("%Y"))+str(x.strftime("%W")))
 
     all_weeks = [str(year)+str(week).zfill(2) for week in range(1, 53) for year in range(start, end)] #TODO is *100 here necessary?
     not_in_df = list(set(all_weeks) - set(df_clean['yearweek'].tolist()))
@@ -134,9 +134,11 @@ def get_dw_timeseries(df_clean, keyword, resolution = 'weekly', start_date = '20
         dw_mentions[key_] = 0 
     
     df_dw_mentions = pd.DataFrame.from_dict(dw_mentions, orient='index', columns=['val'])
-    df_dw_mentions['week_str'] = [str(i) for i in df_dw_mentions.index]
-    df_dw_mentions = df_dw_mentions.sort_values(by='week_str')
+    # df_dw_mentions['week_str'] = [str(i) for i in df_dw_mentions.index]
+    # df_dw_mentions = df_dw_mentions.sort_values(by='week_str')
     #TODO: can we sort without making a new column etc. this is gonna be computationally expensive
+    df_dw_mentions.index = df_dw_mentions.index.astype(int)
+    df_dw_mentions = df_dw_mentions.sort_index()
 
     return df_dw_mentions
 
@@ -224,32 +226,52 @@ def cli_dw_vs_google(df_clean_path=None, # need this to make the timeseries
         print('This dataset has not been cleaned! Please clean dataset before running this function.')
         return -1
 
-    
-    pre_keyword = input('Please input keyword to be analyzed:\n')
-    start_date = input('Please input start date:\n')
-    end_date = input('Please input end date:\n')
+    pre_keyword = str(input('Please input keyword to be analyzed:\n'))
+    start_date = str(input('Please input start date (YYYY-MM-DD):\n'))
+    end_date = str(input('Please input end date (YYYY-MM-DD):\n'))
 
-    keyword = fuzzy_wuzzy(df_clean, pre_keyword)
-    print(f'searching for: {keyword}')
+    # keyword = fuzzy_wuzzy(df_clean, pre_keyword)
+    # print(f'searching for: {keyword}')
+    keyword = pre_keyword
 
-    dw_mentions  = get_dw_timeseries(clean_df, keyword, start_date = start_date, end_date=end_date)
+    dw_mentions = get_dw_timeseries(df_clean, keyword, start_date = start_date, end_date=end_date)
     google_searches = get_interest_over_time(keyword, start_date = start_date, end_date=end_date)
 
-    if not google_searches:
+    if not google_searches: #you may need to change this to check if the df is empty 
         print('Exiting...')
         return -1
-
-
+    
     assert dw_mentions.shape[0] == google_searches.values.shape[0]
-        #TODO: we need a perfect way for matching dates between the two
-        # at the moment we have year+no_of_week in dw and actual date on google 01.01.19, 08.01.2019  etc.)
+    #TODO: we need a perfect way for matching dates between the two
+    # at the moment we have year+no_of_week in dw and actual date on google 01.01.19, 08.01.2019  etc.)
 
-        #now let's compare for this keyword:
-        # 1) Granger 'Causality': do dw articles follow closely after google searches
-        google_searches = google_searches.values
+    #now let's compare for this keyword:
+    # 1) let's make plot 
+    fig, ax = plt.subplots(figsize(15,10))
 
-        mix_df = pd.DataFrame({'dw':dw, 'google':google})
-        gc_res = grangercausalitytests(mix_df, 5)
+    #MOVEEE ALL THIS TO A SPARATE FUNCTION N
+    ax.bar(df_yearmonth_counts['month_str'], df_yearmonth_counts.val, color = 'grey')
+    ax.set_xticks(df_yearmonth_counts['month_str'][::12], rotate = 60)
+    ax.set_xlabel('Time', fontsize = 15)
+    ax.set_ylabel('DW Articles per months with Angie in keywords', color = 'grey', fontsize = 15)
+    ax2 = ax.twinx()
+    ax2.plot(np.arange(0,len(angie_does_google.values)), angie_does_google.values, color = 'r')
+    ax2.set_ylabel('Relative amount of Extracted Google Searches ', color = 'r', fontsize = 15)
+    # save it
+    output_dir = '/home/marios/S2DS/Spring23_DW/reports/figures'
+    file_name = 'Angela_Merkel_and_DW_a_love_story.pdf'
+    fig.savefig(op.join(output_dir,file_name))
+    plt.show()
+
+    ax.plot(dw_mentions.val.values - np.mean(dw_mentions.val.values))
+    ax.plot(google_searches.values - np.mean(google_searches.values))
+
+
+
+    # 2) Granger 'Causality': do dw articles follow closely after google searches
+    google_searches = google_searches.values
+    mix_df = pd.DataFrame({'dw':dw, 'google':google})
+    gc_res = grangercausalitytests(mix_df, 5)
 
         # TODO: find any significant results and print/ report 
 
