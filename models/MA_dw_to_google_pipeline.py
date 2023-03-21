@@ -115,13 +115,13 @@ def get_interest_over_time(keyword, start_date = '2019-01-01', end_date=f'{date.
 
 def get_all_weeks(start_dt, end_dt):
     all_weeks = []
-    if end_dt.year < start_dt.year:
+    if end_dt.strftime("%Y") < start_dt.strftime("%Y"):
         print('End date should not be before start date. Please select different dates.')
         return -1
-
-    elif end_dt.year > start_dt.year:
+    
+    elif end_dt.strftime("%Y") > start_dt.strftime("%Y"):
         #need to loop over years then weeks
-        for year in range(start_dt.year, end_dt.year+1):
+        for year in range(int(start_dt.strftime("%Y")), int(end_dt.strftime("%Y"))+1):
             if year in [2006, 2012, 2017, 2023]:
                 weeks = 53
             else:
@@ -130,19 +130,19 @@ def get_all_weeks(start_dt, end_dt):
                 all_weeks.append(str(year)+str(week).zfill(2))
         #now let's remove the ones before and after the required week
         all_weeks = np.asarray(sorted([int(i) for i in all_weeks]))
-        mask = np.logical_and(all_weeks>=int(str(start_dt.year)+str(start_dt.week)), 
-                              all_weeks<int(str(end_dt.year)+str(end_dt.week)))
+        mask = np.logical_and(all_weeks>=int(str(start_dt.strftime("%Y"))+str(start_dt.strftime("%W"))), 
+                              all_weeks<int(str(end_dt.strftime("%Y"))+str(end_dt.strftime("%W"))))
         all_weeks = all_weeks[mask]
         return [str(i) for i in all_weeks]
     
-    elif end_dt.year == start_dt.year:
+    elif end_dt.strftime("%Y") == start_dt.strftime("%Y"):
         #we just need to loop over weeks 
-        if start_dt.year in [2006, 2012, 2017, 2023]:
+        if int(start_dt.strftime("%Y")) in [2006, 2012, 2017, 2023]:
             weeks = 53
         else:
             weeks = 52
-        for week in range(start_dt.week, end_dt.week+1):
-            all_weeks.append(str(start_dt.year)+str(week).zfill(2))
+        for week in range(int(start_dt.strftime("%W")), int(end_dt.strftime("%W"))+1):
+            all_weeks.append(str(start_dt.strftime("%Y"))+str(week).zfill(2))
         return all_weeks
 
 
@@ -281,6 +281,7 @@ def cli_dw_vs_google(df_clean_path=None, # need this to make the timeseries
 
     dw_mentions = get_dw_timeseries(df_clean, keyword, start_date = start_date, end_date=end_date)
     google_searches = get_interest_over_time(keyword, start_date = start_date, end_date=end_date)
+
 
     if not google_searches: #you may need to change this to check if the df is empty 
         print('Exiting...')
