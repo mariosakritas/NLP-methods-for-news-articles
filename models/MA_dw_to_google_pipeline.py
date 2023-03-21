@@ -179,14 +179,16 @@ def get_dw_timeseries(df_clean, keyword, resolution = 'weekly', start_date = '20
 
     return df_dw_mentions
 
-def plot_signals(dw, google, ax, keyword):
+def plot_signals(dw, google, ax, keyword = 'X'):
     ax.bar(dw.index, dw.val, color = 'grey')
     ax.set_xticks(dw.index[::4], rotate = 60)
     ax.set_xlabel('Time', fontsize = 15)
     ax.set_ylabel(f'DW Articles per week with {keyword} in keywords', color = 'grey', fontsize = 15)
     ax2 = ax.twinx()
     ax2.plot(np.arange(0,len(google.values)), google.values, color = 'r')
-    ax2.set_ylabel('Relative amount of Google Searches', color = 'r', fontsize = 15)
+    ax2.set_ylabel(f'Relative amount of Google Searches for {keyword}', color = 'r', fontsize = 15)
+
+    plt.show()
     return ax
 
 @click.group()
@@ -282,11 +284,13 @@ def cli_dw_vs_google(df_clean_path=None, # need this to make the timeseries
     dw_mentions = get_dw_timeseries(df_clean, keyword, start_date = start_date, end_date=end_date)
     google_searches = get_interest_over_time(keyword, start_date = start_date, end_date=end_date)
 
-
-    if not google_searches: #you may need to change this to check if the df is empty 
+    if google_searches.empty: 
         print('Exiting...')
         return -1
     #datetime_object saved in column 'dt_lastModifiedDate' of df
+
+    # pdb.set_trace()
+    dw_mentions = dw_mentions[:google_searches.values.shape[0]] #REMOVE THIS LATER
 
     assert dw_mentions.shape[0] == google_searches.values.shape[0]
     #TODO: we need a perfect way for matching dates between the two
@@ -294,9 +298,19 @@ def cli_dw_vs_google(df_clean_path=None, # need this to make the timeseries
 
     #now let's compare for this keyword:
     # 1) let's make plot 
-    fig, ax = plt.subplots(figsize(15,10))
-    plot_signals(dw_mentions, google, ax)
-    
+    fig, ax = plt.subplots(figsize=(15,10))
+    fig.autofmt_xdate(rotation=75)
+
+    # pdb.set_trace()
+    # plot_signals(dw_mentions, google_searches, ax, keyword = keyword)
+    ax.bar(dw_mentions.index.astype(str), dw_mentions.val, color = 'grey')
+    ax.set_xticks(dw_mentions.index.astype(str)[::4])
+    ax.set_xlabel('Time', fontsize = 15)
+    ax.set_ylabel(f'DW Articles per week with {keyword} in keywords', color = 'grey', fontsize = 15)
+    ax2 = ax.twinx()
+    ax2.plot(dw_mentions.index.astype(str), google_searches.values, color = 'r', alpha =0.5)
+    ax2.set_ylabel(f'Relative amount of Google Searches for {keyword}', color = 'r', fontsize = 15)
+
     # ax.plot(dw_mentions.val.values - np.mean(dw_mentions.val.values))
     # ax.plot(google_searches.values - np.mean(google_searches.values))
 
