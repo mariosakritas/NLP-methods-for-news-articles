@@ -21,6 +21,7 @@ import datetime as d
 from collections import Counter
 import click
 import pdb
+import sys, traceback
 
 
 GET_METHOD='get'
@@ -56,9 +57,7 @@ class TrendReq(UTrendReq):
 
 def load_data(data_dir, keep=['id', 'keywordStrings', 'lastModifiedDate', 'categories']):
     # Opening JSON file
-    f = open(data_dir)
-    # returns JSON object as a dictionary
-    data = json.load(f)
+    data = pd.read_json(data_dir, orient ='split', compression = 'infer')
     df = pd.DataFrame.from_dict(data)
     df = df.sort_values(by= 'lastModifiedDate')
     df = df.reset_index()
@@ -67,7 +66,7 @@ def load_data(data_dir, keep=['id', 'keywordStrings', 'lastModifiedDate', 'categ
     return df
 
 def truncate_data(df, start_date, end_date): #TODO ?needs fixing to include specific dates 
-    df['dt_lastModifiedDate'] = df.lastModifiedDate.apply(lambda x: d.strptime(x[:10], '%y-%m-%d') if x is not None else x)
+    df['dt_lastModifiedDate'] = df.lastModifiedDate.apply(lambda x: d.datetime.strptime(x[:10], '%Y-%m-%d') if x is not None else x)
     start_dt = d.datetime.strptime(start_date, '%Y-%m-%d')
     end_dt = d.datetime.strptime(end_date, '%Y-%m-%d')
     mask = np.logical_and(df['dt_lastModifiedDate']>=start_dt, df['dt_lastModifiedDate']<end_dt)
@@ -114,12 +113,50 @@ def get_interest_over_time(keyword, start_date = '2019-01-01', end_date=f'{date.
 
     return google_df
 
+def get_all_weeks(start_dt, end_dt):
+    all_weeks = []
+    if end_dt.year < start_dt.year:
+        print('End date should not be before start date. Please select different dates.')
+        return -1
+
+    elif end_dt.year > start_dt.year:
+        #need to loop over years then weeks
+        for year in range(start_dt.year, end_dt.year+1):
+            if year in [2006, 2012, 2017, 2023]:
+                weeks = 53
+            else:
+                weeks = 52
+            for week in range(weeks+1):
+                all_weeks.append(str(year)+str(week).zfill(2))
+        #now let's remove the ones before and after the required week
+        all_weeks = np.asarray(sorted([int(i) for i in all_weeks]))
+        mask = np.logical_and(all_weeks>=int(str(start_dt.year)+str(start_dt.week)), 
+                              all_weeks<int(str(end_dt.year)+str(end_dt.week)))
+        all_weeks = all_weeks[mask]
+        return [str(i) for i in all_weeks]
+    
+    elif end_dt.year == start_dt.year:
+        #we just need to loop over weeks 
+        if start_dt.year in [2006, 2012, 2017, 2023]:
+            weeks = 53
+        else:
+            weeks = 52
+        for week in range(start_dt.week, end_dt.week+1):
+            all_weeks.append(str(start_dt.year)+str(week).zfill(2))
+        return all_weeks
+
+
+
+    return sorted(all_weeks)
+
 def get_dw_timeseries(df_clean, keyword, resolution = 'weekly', start_date = '2019-01-01', end_date=f'{date.today()}'):
     #TODO: check this function after replacing loop 
     
-    df_clean = truncate_data(df_clean, start_date, end_date)
+    start_dt = d.datetime.strptime(start_date, '%Y-%m-%d')
+    end_dt = d.datetime.strptime(end_date, '%Y-%m-%d')
+
     not_keyword_indices = [] #TODO: do this without a loop (create extra boolean column and assign True if keyword is there)
-    for i, row in enumerate(df_clean['keywordStrings']):
+    for i, row in enumerate(df_clean['keywordStringsCleanAfterFuzz']):
         if keyword not in row:
             not_keyword_indices.append(i)
 
@@ -127,7 +164,7 @@ def get_dw_timeseries(df_clean, keyword, resolution = 'weekly', start_date = '20
     df_clean['datetimes']= pd.to_datetime(df_clean['lastModifiedDate'])
     df_clean['yearweek'] = df_clean['dt_lastModifiedDate'].apply(lambda x: str(x.strftime("%Y"))+str(x.strftime("%W")))
 
-    all_weeks = [str(year)+str(week).zfill(2) for week in range(1, 53) for year in range(start, end)] #TODO is *100 here necessary?
+    all_weeks = get_all_weeks(start_dt, end_dt)
     not_in_df = list(set(all_weeks) - set(df_clean['yearweek'].tolist()))
     dw_mentions = dict(Counter(df_clean['yearweek'].tolist()))
     for key_ in not_in_df:
@@ -142,7 +179,15 @@ def get_dw_timeseries(df_clean, keyword, resolution = 'weekly', start_date = '20
 
     return df_dw_mentions
 
-
+def plot_signals(dw, google, ax, keyword):
+    ax.bar(dw.index, dw.val, color = 'grey')
+    ax.set_xticks(dw.index[::4], rotate = 60)
+    ax.set_xlabel('Time', fontsize = 15)
+    ax.set_ylabel(f'DW Articles per week with {keyword} in keywords', color = 'grey', fontsize = 15)
+    ax2 = ax.twinx()
+    ax2.plot(np.arange(0,len(google.values)), google.values, color = 'r')
+    ax2.set_ylabel('Relative amount of Google Searches', color = 'r', fontsize = 15)
+    return ax
 
 @click.group()
 def cli():
@@ -229,7 +274,7 @@ def cli_dw_vs_google(df_clean_path=None, # need this to make the timeseries
     pre_keyword = str(input('Please input keyword to be analyzed:\n'))
     start_date = str(input('Please input start date (YYYY-MM-DD):\n'))
     end_date = str(input('Please input end date (YYYY-MM-DD):\n'))
-
+    df_clean = truncate_data(df_clean, start_date, end_date)
     # keyword = fuzzy_wuzzy(df_clean, pre_keyword)
     # print(f'searching for: {keyword}')
     keyword = pre_keyword
@@ -240,7 +285,8 @@ def cli_dw_vs_google(df_clean_path=None, # need this to make the timeseries
     if not google_searches: #you may need to change this to check if the df is empty 
         print('Exiting...')
         return -1
-    
+    #datetime_object saved in column 'dt_lastModifiedDate' of df
+
     assert dw_mentions.shape[0] == google_searches.values.shape[0]
     #TODO: we need a perfect way for matching dates between the two
     # at the moment we have year+no_of_week in dw and actual date on google 01.01.19, 08.01.2019  etc.)
@@ -248,41 +294,24 @@ def cli_dw_vs_google(df_clean_path=None, # need this to make the timeseries
     #now let's compare for this keyword:
     # 1) let's make plot 
     fig, ax = plt.subplots(figsize(15,10))
-
-    #MOVEEE ALL THIS TO A SPARATE FUNCTION N
-    plot_signals(dw_mentions)
+    plot_signals(dw_mentions, google, ax)
     
-    ax.bar(df_yearmonth_counts['month_str'], df_yearmonth_counts.val, color = 'grey')
-    ax.set_xticks(df_yearmonth_counts['month_str'][::12], rotate = 60)
-    ax.set_xlabel('Time', fontsize = 15)
-    ax.set_ylabel('DW Articles per months with Angie in keywords', color = 'grey', fontsize = 15)
-    ax2 = ax.twinx()
-    ax2.plot(np.arange(0,len(angie_does_google.values)), angie_does_google.values, color = 'r')
-    ax2.set_ylabel('Relative amount of Extracted Google Searches ', color = 'r', fontsize = 15)
-    # save it
-    output_dir = '/home/marios/S2DS/Spring23_DW/reports/figures'
-    file_name = 'Angela_Merkel_and_DW_a_love_story.pdf'
-    fig.savefig(op.join(output_dir,file_name))
-    plt.show()
-
-    ax.plot(dw_mentions.val.values - np.mean(dw_mentions.val.values))
-    ax.plot(google_searches.values - np.mean(google_searches.values))
-
-
+    # ax.plot(dw_mentions.val.values - np.mean(dw_mentions.val.values))
+    # ax.plot(google_searches.values - np.mean(google_searches.values))
 
     # 2) Granger 'Causality': do dw articles follow closely after google searches
-    google_searches = google_searches.values
-    mix_df = pd.DataFrame({'dw':dw, 'google':google})
-    gc_res = grangercausalitytests(mix_df, 5)
-
+    # google_searches = google_searches.values
+    # mix_df = pd.DataFrame({'dw':dw, 'google':google})
+    # gc_res = grangercausalitytests(mix_df, 5)
         # TODO: find any significant results and print/ report 
-
         # TODO: implement more metrics to compare 
-
         # TODO: plot graphs and metrics in a pdf?
 
-
-
+    # save it
+    output_dir = '/home/marios/S2DS/Spring23_DW/reports/figures'
+    file_name = f'{keyword}_dw_vs_google.pdf'
+    fig.savefig(op.join(output_dir,file_name))
+    plt.show()
     #TODO: decide if you will impose a limit on how many mentions and above you will create timeseries (based on output examples)
 
 
