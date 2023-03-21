@@ -250,6 +250,8 @@ def cli_dw_vs_google(df_clean_path=None, # need this to make the timeseries
     fig, ax = plt.subplots(figsize(15,10))
 
     #MOVEEE ALL THIS TO A SPARATE FUNCTION N
+    plot_signals(dw_mentions)
+    
     ax.bar(df_yearmonth_counts['month_str'], df_yearmonth_counts.val, color = 'grey')
     ax.set_xticks(df_yearmonth_counts['month_str'][::12], rotate = 60)
     ax.set_xlabel('Time', fontsize = 15)
