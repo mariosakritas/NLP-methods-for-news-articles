@@ -22,6 +22,7 @@ from collections import Counter
 import click
 import pdb
 import sys, traceback
+import rapidfuzz.process as rp
 
 
 GET_METHOD='get'
@@ -77,7 +78,8 @@ def truncate_data(df, start_date, end_date): #TODO ?needs fixing to include spec
 #     return clean_df
 
 def extract_keywords(df):
-    keywords = list(set([val for sublist in df['keywordStringsCleanAfterFuzz'] for val in sublist]))
+    keywords = np.asarray(list(set([val for sublist in df['keywordStringsCleanAfterFuzz'] for val in sublist])))
+
     return keywords
 
 def get_interest_over_time(keyword, start_date = '2019-01-01', end_date=f'{date.today()}'):
@@ -175,26 +177,32 @@ def get_dw_timeseries(df_clean, keyword, resolution = 'weekly', start_date = '20
 
     return df_dw_mentions
 
-def plot_signals(dw, google, ax, keyword = 'X'):
-    ax.bar(dw.index, dw.val, color = 'grey')
-    ax.set_xticks(dw.index[::4], rotate = 60)
-    ax.set_xlabel('Time', fontsize = 15)
-    ax.set_ylabel(f'DW Articles per week with {keyword} in keywords', color = 'grey', fontsize = 15)
+def plot_signals(dw_mentions, google_searches, fig, ax, keyword = 'keyword'):
+    fig.autofmt_xdate(rotation=75)
+    ax.plot(dw_mentions.index.astype(str), dw_mentions.val, color = 'k')
+    ax.set_xticks(dw_mentions.index.astype(str)[::8])
+    ax.set_xlabel('Time', fontsize = 20)
+    ax.set_ylabel(f'DW Articles per week with {keyword} in keywords', color = 'k', fontsize = 20)
     ax2 = ax.twinx()
-    ax2.plot(np.arange(0,len(google.values)), google.values, color = 'r')
-    ax2.set_ylabel(f'Relative amount of Google Searches for {keyword}', color = 'r', fontsize = 15)
-
-    plt.show()
-    return ax
+    ax2.plot(dw_mentions.index.astype(str), google_searches.values, color = 'r', alpha =0.5)
+    ax2.set_ylabel(f'Relative amount of Google Searches for {keyword}', color = 'r', fontsize = 20)
+    return fig, ax
 
 def remove_spaces(keyword):
     while keyword[-1] == ' ':
         keyword = keyword[:-1]
     return keyword
 
-def find_similar_keywords(keyword):
+def find_similar_keywords(keyword, df):
+    keywords = np.asarray(list(set([val for sublist in df['keywordStringsCleanAfterFuzz'] for val in sublist])))
+    similarities = rp.cdist([keyword], keywords).ravel()
+    #get all above 90 and return theem if there are some
+    similar_keywords = keywords[similarities>=90]
+    #append the highest 1 if not  
+    if similar_keywords.shape[0]==0:
+        similar_keywords = keywords[similarities == np.max(similarities)]
+    return list(similar_keywords)
 
-    return similar_keywords
 
 @click.group()
 def cli():
@@ -278,53 +286,36 @@ def cli_dw_vs_google(df_clean_path=None, # need this to make the timeseries
         print('This dataset has not been cleaned! Please clean dataset before running this function.')
         return -1
 
-    # unique_kws = extract_keywords(df_clean)
+    unique_kws = extract_keywords(df_clean)
     keyword = remove_spaces(str(input('Please input keyword to be analyzed:\n')).lower())
-    # while keyword not in unique_kws:
-    #     similar_kws = find_similar_keywords(keyword)
-    #     keyword = input(f'This keyword is not in the data analyzed. Please select a different one. Suggestions: {similar_kws}')
-    #     keyword = remove_spaces(str(keyword.lower()))
 
-
-
-
+    while keyword not in unique_kws:
+        similar_kws = find_similar_keywords(keyword)
+        keyword = input(f'This keyword is not in the data analyzed. Please select a different one. Suggestions: {similar_kws}')
+        keyword = remove_spaces(str(keyword.lower()))
     start_date = str(input('Please input start date (YYYY-MM-DD):\n'))
     end_date = str(input('Please input end date (YYYY-MM-DD):\n'))
     df_clean = truncate_data(df_clean, start_date, end_date)
 
-    # keyword = fuzzy_wuzzy(df_clean, pre_keyword)
-    # print(f'searching for: {keyword}')
-    # keyword = pre_keyword
-
     dw_mentions = get_dw_timeseries(df_clean, keyword, start_date = start_date, end_date=end_date)
     google_searches = get_interest_over_time(keyword, start_date = start_date, end_date=end_date)
 
-    if google_searches.empty: 
-        print('Exiting...')
-        return -1
+    # if google_searches.empty: 
+    #     print('Exiting...')
+    #     return -1
     #datetime_object saved in column 'dt_lastModifiedDate' of df
     # pdb.set_trace()
-    dw_mentions = dw_mentions[:google_searches.values.shape[0]] #REMOVE THIS LATER
+    dw_mentions = dw_mentions[:google_searches.values.shape[0]] 
+    google_searches = google_searches[:dw_mentions.shape[0]] 
+
+    #REMOVE THIS LATER when weeks are matched perfectly e.g.: usign resample or using googles dats
     assert dw_mentions.shape[0] == google_searches.values.shape[0]
-    #TODO: we need a perfect way for matching dates between the two
-    # at the moment we have year+no_of_week in dw and actual date on google 01.01.19, 08.01.2019  etc.)
 
-    #now let's compare for this keyword:
-    # 1) let's make plot 
+    #let's make plot 
     fig, ax = plt.subplots(figsize=(15,10))
-    fig.autofmt_xdate(rotation=75)
 
-    # pdb.set_trace()
-    # plot_signals(dw_mentions, google_searches, ax, keyword = keyword)
-    #TODO: removee this and do it using function 
-    ax.plot(dw_mentions.index.astype(str), dw_mentions.val, color = 'k')
-    ax.set_xticks(dw_mentions.index.astype(str)[::8])
-    ax.set_xlabel('Time', fontsize = 20)
-    ax.set_ylabel(f'DW Articles per week with {keyword} in keywords', color = 'k', fontsize = 20)
-    ax2 = ax.twinx()
-    ax2.plot(dw_mentions.index.astype(str), google_searches.values, color = 'r', alpha =0.5)
-    ax2.set_ylabel(f'Relative amount of Google Searches for {keyword}', color = 'r', fontsize = 20)
-
+    fig, ax = plot_signals(dw_mentions, google_searches, fig, ax, keyword = keyword)
+    
     # ax.plot(dw_mentions.val.values - np.mean(dw_mentions.val.values))
     # ax.plot(google_searches.values - np.mean(google_searches.values))
 
@@ -343,20 +334,6 @@ def cli_dw_vs_google(df_clean_path=None, # need this to make the timeseries
 
 cli.add_command(cli_dw_vs_google)
 
-
-
-
-#saving these for latere potentially 
-
-# #let's load and loop over unique cleaned keywords:
-#     kw_google_df = np.load(kw_google_path)
-#     for i, (keyword, google_searches) in enumerate(zip(kw_google_df['keywords'], kw_google_df['google_trends'])):
-#         #TODO: reemove this loop if we can? maybe not                                  
-#         print(keyword)
-#         #now let's use this word on the original dataset to get time series
-#         dw_mentions  = get_dw_timeseries(clean_df, keyword)
-
-#         assert dw_mentions.shape[0] == google_searches.values.shape[0]
 
 
 
