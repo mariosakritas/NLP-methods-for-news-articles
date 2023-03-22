@@ -77,7 +77,7 @@ def truncate_data(df, start_date, end_date): #TODO ?needs fixing to include spec
 #     return clean_df
 
 def extract_keywords(df):
-    keywords = [val for sublist in df['cleanKeywords'] for val in sublist]
+    keywords = list(set([val for sublist in df['keywordStringsCleanAfterFuzz'] for val in sublist]))
     return keywords
 
 def get_interest_over_time(keyword, start_date = '2019-01-01', end_date=f'{date.today()}'):
@@ -192,6 +192,10 @@ def remove_spaces(keyword):
         keyword = keyword[:-1]
     return keyword
 
+def find_similar_keywords(keyword):
+
+    return similar_keywords
+
 @click.group()
 def cli():
     pass
@@ -274,14 +278,23 @@ def cli_dw_vs_google(df_clean_path=None, # need this to make the timeseries
         print('This dataset has not been cleaned! Please clean dataset before running this function.')
         return -1
 
-    pre_keyword = remove_spaces(str(input('Please input keyword to be analyzed:\n')).lower())
+    # unique_kws = extract_keywords(df_clean)
+    keyword = remove_spaces(str(input('Please input keyword to be analyzed:\n')).lower())
+    # while keyword not in unique_kws:
+    #     similar_kws = find_similar_keywords(keyword)
+    #     keyword = input(f'This keyword is not in the data analyzed. Please select a different one. Suggestions: {similar_kws}')
+    #     keyword = remove_spaces(str(keyword.lower()))
+
+
+
+
     start_date = str(input('Please input start date (YYYY-MM-DD):\n'))
     end_date = str(input('Please input end date (YYYY-MM-DD):\n'))
     df_clean = truncate_data(df_clean, start_date, end_date)
 
     # keyword = fuzzy_wuzzy(df_clean, pre_keyword)
     # print(f'searching for: {keyword}')
-    keyword = pre_keyword
+    # keyword = pre_keyword
 
     dw_mentions = get_dw_timeseries(df_clean, keyword, start_date = start_date, end_date=end_date)
     google_searches = get_interest_over_time(keyword, start_date = start_date, end_date=end_date)
@@ -291,7 +304,7 @@ def cli_dw_vs_google(df_clean_path=None, # need this to make the timeseries
         return -1
     #datetime_object saved in column 'dt_lastModifiedDate' of df
     # pdb.set_trace()
-    # dw_mentions = dw_mentions[:google_searches.values.shape[0]] #REMOVE THIS LATER
+    dw_mentions = dw_mentions[:google_searches.values.shape[0]] #REMOVE THIS LATER
     assert dw_mentions.shape[0] == google_searches.values.shape[0]
     #TODO: we need a perfect way for matching dates between the two
     # at the moment we have year+no_of_week in dw and actual date on google 01.01.19, 08.01.2019  etc.)
@@ -304,13 +317,13 @@ def cli_dw_vs_google(df_clean_path=None, # need this to make the timeseries
     # pdb.set_trace()
     # plot_signals(dw_mentions, google_searches, ax, keyword = keyword)
     #TODO: removee this and do it using function 
-    ax.bar(dw_mentions.index.astype(str), dw_mentions.val, color = 'grey')
-    ax.set_xticks(dw_mentions.index.astype(str)[::4])
-    ax.set_xlabel('Time', fontsize = 15)
-    ax.set_ylabel(f'DW Articles per week with {keyword} in keywords', color = 'grey', fontsize = 15)
+    ax.plot(dw_mentions.index.astype(str), dw_mentions.val, color = 'k')
+    ax.set_xticks(dw_mentions.index.astype(str)[::8])
+    ax.set_xlabel('Time', fontsize = 20)
+    ax.set_ylabel(f'DW Articles per week with {keyword} in keywords', color = 'k', fontsize = 20)
     ax2 = ax.twinx()
     ax2.plot(dw_mentions.index.astype(str), google_searches.values, color = 'r', alpha =0.5)
-    ax2.set_ylabel(f'Relative amount of Google Searches for {keyword}', color = 'r', fontsize = 15)
+    ax2.set_ylabel(f'Relative amount of Google Searches for {keyword}', color = 'r', fontsize = 20)
 
     # ax.plot(dw_mentions.val.values - np.mean(dw_mentions.val.values))
     # ax.plot(google_searches.values - np.mean(google_searches.values))
@@ -324,12 +337,9 @@ def cli_dw_vs_google(df_clean_path=None, # need this to make the timeseries
         # TODO: plot graphs and metrics in a pdf?
 
     # save it
-    output_dir = '/home/marios/S2DS/Spring23_DW/reports/figures'
     file_name = f'{keyword}_dw_vs_google.pdf'
-    fig.savefig(op.join(output_dir,file_name))
-    plt.show()
+    fig.savefig(op.join(output,file_name))
     #TODO: decide if you will impose a limit on how many mentions and above you will create timeseries (based on output examples)
-
 
 cli.add_command(cli_dw_vs_google)
 
