@@ -24,4 +24,28 @@ def get_items_with_substring(lst_lst_keywords, substring):
     return indices_substring, lst_keywords_substring, keywords_substring
 
 
+def clean_keywords(lst_lst_keywords):
 
+    # Lower case
+    lst_lst_keywords = [list(map(str.casefold, x)) for x in lst_lst_keywords]
+
+    # Split
+    lst_lst_keywords = [list(chain(*[kw.split(', ') for kw in lst_kw])) for lst_kw in lst_lst_keywords]
+    lst_lst_keywords = [list(chain(*[kw.split(' - ') for kw in lst_kw])) for lst_kw in lst_lst_keywords]
+
+    # Replace unicode and double spaces by a space
+    lst_lst_keywords = [list(map(lambda x: x.replace('\xa0', ' '), lst_kw)) for lst_kw in lst_lst_keywords]
+    lst_lst_keywords = [list(map(lambda x: x.replace('  ', ' '), lst_kw)) for lst_kw in lst_lst_keywords]
+
+    # Replace unwanted characters
+    lst_lst_keywords = [list(map(lambda x: ''.join(filter(str.isprintable, x)), lst_kw)) for lst_kw in lst_lst_keywords]
+    lst_lst_keywords = [list(map(lambda x: x.replace('.', ''), lst_kw)) for lst_kw in lst_lst_keywords]
+    lst_lst_keywords = [list(map(lambda x: x.replace('" ', ''), lst_kw)) for lst_kw in lst_lst_keywords]
+    lst_lst_keywords = [list(map(lambda x: x.replace('"', ''), lst_kw)) for lst_kw in lst_lst_keywords]
+    lst_lst_keywords = [list(map(lambda x: x.replace('keywords: ', ''), lst_kw)) for lst_kw in lst_lst_keywords]
+
+    # Remove sentences (keywords that have more than 6 spaces)
+    n_spaces = 6
+    lst_lst_keywords = [[kw for kw in lst_kw if kw.count(' ')<n_spaces] for lst_kw in lst_lst_keywords]
+
+    return lst_lst_keywords
