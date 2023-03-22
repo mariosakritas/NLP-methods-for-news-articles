@@ -54,7 +54,6 @@ class TrendReq(UTrendReq):
     def _get_data(self, url, method=GET_METHOD, trim_chars=0, **kwargs):
         return super()._get_data(url, method=GET_METHOD, trim_chars=trim_chars, headers=headers, **kwargs)
 
-
 def load_data(data_dir, keep=['id', 'keywordStrings', 'lastModifiedDate', 'categories']):
     # Opening JSON file
     data = pd.read_json(data_dir, orient ='split', compression = 'infer')
@@ -73,8 +72,7 @@ def truncate_data(df, start_date, end_date): #TODO ?needs fixing to include spec
     df_subset = df[mask]
     return df_subset
 
-#TODO fill in this funnction based on Anyas and Magda's input
-
+#TODO fill in this function based on Anyas and Magda's input
 # def clean_df(df):
 #     return clean_df
 
@@ -126,7 +124,7 @@ def get_all_weeks(start_dt, end_dt):
                 weeks = 53
             else:
                 weeks = 52
-            for week in range(weeks+1):
+            for week in range(1, weeks+1):
                 all_weeks.append(str(year)+str(week).zfill(2))
         #now let's remove the ones before and after the required week
         all_weeks = np.asarray(sorted([int(i) for i in all_weeks]))
@@ -144,9 +142,7 @@ def get_all_weeks(start_dt, end_dt):
         for week in range(int(start_dt.strftime("%W")), int(end_dt.strftime("%W"))+1):
             all_weeks.append(str(start_dt.strftime("%Y"))+str(week).zfill(2))
         return all_weeks
-
-
-
+    
     return sorted(all_weeks)
 
 def get_dw_timeseries(df_clean, keyword, resolution = 'weekly', start_date = '2019-01-01', end_date=f'{date.today()}'):
@@ -191,6 +187,11 @@ def plot_signals(dw, google, ax, keyword = 'X'):
     plt.show()
     return ax
 
+def remove_spaces(keyword):
+    while keyword[-1] == ' ':
+        keyword = keyword[:-1]
+    return keyword
+
 @click.group()
 def cli():
     pass
@@ -214,7 +215,7 @@ def cli_extract_google_trends(db_path=None,
     if 'keywordStringsCleanAfterFuzz' not in df.columns or overwrite:
         #let's load entire dataset and create keyword list from scratch 
         df = load_data(db_path, keep=['id', 'keywordStrings', 'lastModifiedDate'])
-        # df = truncate_data(df) #let's keep entiree dataset for now?
+        df = truncate_data(df) #let's keep entiree dataset for now?
         df = clean_df(df)
         clean_file_name = 'cleaned_df.npz'
         np.save(op.join(output, clean_file_name), df)
@@ -273,10 +274,11 @@ def cli_dw_vs_google(df_clean_path=None, # need this to make the timeseries
         print('This dataset has not been cleaned! Please clean dataset before running this function.')
         return -1
 
-    pre_keyword = str(input('Please input keyword to be analyzed:\n'))
+    pre_keyword = remove_spaces(str(input('Please input keyword to be analyzed:\n')).lower())
     start_date = str(input('Please input start date (YYYY-MM-DD):\n'))
     end_date = str(input('Please input end date (YYYY-MM-DD):\n'))
     df_clean = truncate_data(df_clean, start_date, end_date)
+
     # keyword = fuzzy_wuzzy(df_clean, pre_keyword)
     # print(f'searching for: {keyword}')
     keyword = pre_keyword
@@ -288,10 +290,8 @@ def cli_dw_vs_google(df_clean_path=None, # need this to make the timeseries
         print('Exiting...')
         return -1
     #datetime_object saved in column 'dt_lastModifiedDate' of df
-
     # pdb.set_trace()
-    dw_mentions = dw_mentions[:google_searches.values.shape[0]] #REMOVE THIS LATER
-
+    # dw_mentions = dw_mentions[:google_searches.values.shape[0]] #REMOVE THIS LATER
     assert dw_mentions.shape[0] == google_searches.values.shape[0]
     #TODO: we need a perfect way for matching dates between the two
     # at the moment we have year+no_of_week in dw and actual date on google 01.01.19, 08.01.2019  etc.)
@@ -303,6 +303,7 @@ def cli_dw_vs_google(df_clean_path=None, # need this to make the timeseries
 
     # pdb.set_trace()
     # plot_signals(dw_mentions, google_searches, ax, keyword = keyword)
+    #TODO: removee this and do it using function 
     ax.bar(dw_mentions.index.astype(str), dw_mentions.val, color = 'grey')
     ax.set_xticks(dw_mentions.index.astype(str)[::4])
     ax.set_xlabel('Time', fontsize = 15)
