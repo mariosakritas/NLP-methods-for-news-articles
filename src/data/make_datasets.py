@@ -8,7 +8,9 @@ def get_data(data_file, start_date, end_date):
     Returns a data frame with the data between start_date and end_date (format: 'yyyy-mm-dd')
 
     """
-    
+
+    print('Getting data...')
+          
     # Opening JSON file
     f = open(data_file)
     
@@ -18,6 +20,8 @@ def get_data(data_file, start_date, end_date):
     # convert to data frame
     df = pd.DataFrame.from_dict(data)
 
+    print('Loading data DONE. Number of articles is', len(df))
+
     # sorts dataframe by date
     df = df.sort_values(by='lastModifiedDate') 
 
@@ -26,5 +30,8 @@ def get_data(data_file, start_date, end_date):
     
     # extracts subset from this dataset
     df_subset = df.loc[mask]
+
+    # Outputs length of unique keywords before and after
+    print('Extracting data DONE. Number of articles from', start_date, 'to', end_date, 'is', len(df_subset))
 
     return df_subset
