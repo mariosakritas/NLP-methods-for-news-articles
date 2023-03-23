@@ -26,26 +26,41 @@ def get_items_with_substring(lst_lst_keywords, substring):
 
 def clean_keywords(lst_lst_keywords):
 
+    """
+    Cleans a list of list of keywords
+    1. Lower case
+    2. Splits keywords that have not been properly split
+    3. Remoes unicode and other unwanted symbols
+    4. Removes long sentences
+
+    """
+
+    lst_lst_keywords_clean = lst_lst_keywords
+
     # Lower case
-    lst_lst_keywords = [list(map(str.casefold, x)) for x in lst_lst_keywords]
+    lst_lst_keywords_clean = [list(map(str.casefold, x)) for x in lst_lst_keywords_clean]
 
     # Split
-    lst_lst_keywords = [list(chain(*[kw.split(', ') for kw in lst_kw])) for lst_kw in lst_lst_keywords]
-    lst_lst_keywords = [list(chain(*[kw.split(' - ') for kw in lst_kw])) for lst_kw in lst_lst_keywords]
+    lst_lst_keywords_clean = [list(chain(*[kw.split(', ') for kw in lst_kw])) for lst_kw in lst_lst_keywords_clean]
+    lst_lst_keywords_clean = [list(chain(*[kw.split(' - ') for kw in lst_kw])) for lst_kw in lst_lst_keywords_clean]
 
     # Replace unicode and double spaces by a space
-    lst_lst_keywords = [list(map(lambda x: x.replace('\xa0', ' '), lst_kw)) for lst_kw in lst_lst_keywords]
-    lst_lst_keywords = [list(map(lambda x: x.replace('  ', ' '), lst_kw)) for lst_kw in lst_lst_keywords]
+    lst_lst_keywords_clean = [list(map(lambda x: x.replace('\xa0', ' '), lst_kw)) for lst_kw in lst_lst_keywords_clean]
+    lst_lst_keywords_clean = [list(map(lambda x: x.replace('  ', ' '), lst_kw)) for lst_kw in lst_lst_keywords_clean]
 
     # Replace unwanted characters
-    lst_lst_keywords = [list(map(lambda x: ''.join(filter(str.isprintable, x)), lst_kw)) for lst_kw in lst_lst_keywords]
-    lst_lst_keywords = [list(map(lambda x: x.replace('.', ''), lst_kw)) for lst_kw in lst_lst_keywords]
-    lst_lst_keywords = [list(map(lambda x: x.replace('" ', ''), lst_kw)) for lst_kw in lst_lst_keywords]
-    lst_lst_keywords = [list(map(lambda x: x.replace('"', ''), lst_kw)) for lst_kw in lst_lst_keywords]
-    lst_lst_keywords = [list(map(lambda x: x.replace('keywords: ', ''), lst_kw)) for lst_kw in lst_lst_keywords]
+    lst_lst_keywords_clean = [list(map(lambda x: ''.join(filter(str.isprintable, x)), lst_kw)) for lst_kw in lst_lst_keywords_clean]
+    lst_lst_keywords_clean = [list(map(lambda x: x.replace('.', ''), lst_kw)) for lst_kw in lst_lst_keywords_clean]
+    lst_lst_keywords_clean = [list(map(lambda x: x.replace('" ', ''), lst_kw)) for lst_kw in lst_lst_keywords_clean]
+    lst_lst_keywords_clean = [list(map(lambda x: x.replace('"', ''), lst_kw)) for lst_kw in lst_lst_keywords_clean]
+    lst_lst_keywords_clean = [list(map(lambda x: x.replace('keywords: ', ''), lst_kw)) for lst_kw in lst_lst_keywords_clean]
 
     # Remove sentences (keywords that have more than 6 spaces)
     n_spaces = 6
-    lst_lst_keywords = [[kw for kw in lst_kw if kw.count(' ')<n_spaces] for lst_kw in lst_lst_keywords]
+    lst_lst_keywords_clean = [[kw for kw in lst_kw if kw.count(' ')<n_spaces] for lst_kw in lst_lst_keywords_clean]
 
-    return lst_lst_keywords
+    # Outputs length of unique keywords before and after
+    print('Cleaning DONE. Number of unique keywords went from', len(set(list(chain(*lst_lst_keywords)))), \
+        'to', len(set(list(chain(*lst_lst_keywords_clean)))))
+
+    return lst_lst_keywords_clean
