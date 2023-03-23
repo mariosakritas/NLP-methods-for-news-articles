@@ -103,7 +103,8 @@ def standardize_keywords(lst_lst_keywords_clean):
 
     # extract unique ones and remove the empty entry
     unique_keywords = list(set(keywords_flat))
-    unique_keywords.remove('')
+    if '' in unique_keywords:
+        unique_keywords.remove('')
 
     ### Run rapid fuzz
     ratio_array= pr.cdist(unique_keywords, unique_keywords, score_cutoff = 90)
