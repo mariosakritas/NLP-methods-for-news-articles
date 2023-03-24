@@ -115,6 +115,9 @@ def get_interest_over_time(keyword, start_date = '2019-01-01', end_date=f'{date.
 
 def get_all_weeks(start_dt, end_dt):
     all_weeks = []
+    start_dt = d.datetime.strptime(start_dt, '%Y-%m-%d') #just making sure
+    end_dt = d.datetime.strptime(end_dt, '%Y-%m-%d')
+
     if end_dt.strftime("%Y") < start_dt.strftime("%Y"):
         print('End date should not be before start date. Please select different dates.')
         return -1
@@ -147,44 +150,37 @@ def get_all_weeks(start_dt, end_dt):
     
     return sorted(all_weeks)
 
-def get_dw_timeseries(df_clean, keyword, resolution = 'weekly', start_date = '2019-01-01', end_date=f'{date.today()}'):
+def get_dw_timeseries(df_clean, keyword, google, start_date = '2019-01-01'):
     #TODO: check this function after replacing loop 
-    
-    start_dt = d.datetime.strptime(start_date, '%Y-%m-%d')
-    end_dt = d.datetime.strptime(end_date, '%Y-%m-%d')
-
-    not_keyword_indices = [] #TODO: do this without a loop (create extra boolean column and assign True if keyword is there)
-    for i, row in enumerate(df_clean['keywordStringsCleanAfterFuzz']):
+    # start_date = d.datetime.strptime(start_date, '%Y-%m-%d')
+    # end_date = d.datetime.strptime(end_date, '%Y-%m-%d')
+    keyword_indices = [] #TODO: do this without a loop (create extra boolean column and assign True if keyword is there)
+    for row in enumerate(df_clean['keywordStringsCleanAfterFuzz']):
         if keyword not in row:
-            not_keyword_indices.append(i)
+            df_clean.drop(row)
+            keyword_indices.append(i)
+    df_clean = df_clean.loc[keyword_indices, :] #keep only rows where we havee a mention 
+    df_clean['ts'] = pd.to_datetime(df_clean.lastModifiedDate,format= '%Y-%m-%d' )
+    dw_mentions = []
+    edges = list(google.index) #extract time indices
+    edges.insert(0, start_date) #append the first one manually
+    edges = pd.to_datetime(edges,format= '%Y-%m-%d' ) # turn them all into pandas timestamps
+    for i, (start, end) in enumerate(zip(edges[:-1], edges[1:])):
+        mask = np.logical_and(df_clean.ts.dt.date >= start, df_clean.ts.dt.date<end)
+        dw_mentions.append(np.sum(mask))
+    google['dw'] = dw_mentions
+    google = google.rename(columns={keyword: 'google'})
 
-    df_clean = df_clean.drop(not_keyword_indices)
-    df_clean['datetimes']= pd.to_datetime(df_clean['lastModifiedDate'])
-    df_clean['yearweek'] = df_clean['dt_lastModifiedDate'].apply(lambda x: str(x.strftime("%Y"))+str(x.strftime("%W")))
+    return google
 
-    all_weeks = get_all_weeks(start_dt, end_dt)
-    not_in_df = list(set(all_weeks) - set(df_clean['yearweek'].tolist()))
-    dw_mentions = dict(Counter(df_clean['yearweek'].tolist()))
-    for key_ in not_in_df:
-        dw_mentions[key_] = 0 
-    
-    df_dw_mentions = pd.DataFrame.from_dict(dw_mentions, orient='index', columns=['val'])
-    # df_dw_mentions['week_str'] = [str(i) for i in df_dw_mentions.index]
-    # df_dw_mentions = df_dw_mentions.sort_values(by='week_str')
-    #TODO: can we sort without making a new column etc. this is gonna be computationally expensive
-    df_dw_mentions.index = df_dw_mentions.index.astype(int)
-    df_dw_mentions = df_dw_mentions.sort_index()
-
-    return df_dw_mentions
-
-def plot_signals(dw_mentions, google_searches, fig, ax, keyword = 'keyword'):
+def plot_signals(mixed_df, fig, ax, keyword = 'keyword'):
     fig.autofmt_xdate(rotation=75)
-    ax.plot(dw_mentions.index.astype(str), dw_mentions.val, color = 'k')
-    ax.set_xticks(dw_mentions.index.astype(str)[::8])
+    ax.plot(mixed_df.index, mixed_df.dw, color = 'k')
+    # ax.set_xticks(dw_mentions.index.astype(str)[::8])
     ax.set_xlabel('Time', fontsize = 20)
     ax.set_ylabel(f'DW Articles per week with {keyword} in keywords', color = 'k', fontsize = 20)
     ax2 = ax.twinx()
-    ax2.plot(dw_mentions.index.astype(str), google_searches.values, color = 'r', alpha =0.5)
+    ax2.plot(mixed_df.index, mixed_df.google, color = 'r', alpha =0.5) #may need to add .astype(str)
     ax2.set_ylabel(f'Relative amount of Google Searches for {keyword}', color = 'r', fontsize = 20)
     return fig, ax
 
@@ -288,33 +284,20 @@ def cli_dw_vs_google(df_clean_path=None, # need this to make the timeseries
 
     unique_kws = extract_keywords(df_clean)
     keyword = remove_spaces(str(input('Please input keyword to be analyzed:\n')).lower())
-
     while keyword not in unique_kws:
-        similar_kws = find_similar_keywords(keyword)
-        keyword = input(f'This keyword is not in the data analyzed. Please select a different one. Suggestions: {similar_kws}')
+        similar_kws = find_similar_keywords(keyword, df_clean)
+        keyword = input(f'This keyword is not in the data analyzed. Please select a different one. Suggestions: {similar_kws}\n')
         keyword = remove_spaces(str(keyword.lower()))
     start_date = str(input('Please input start date (YYYY-MM-DD):\n'))
     end_date = str(input('Please input end date (YYYY-MM-DD):\n'))
     df_clean = truncate_data(df_clean, start_date, end_date)
 
-    dw_mentions = get_dw_timeseries(df_clean, keyword, start_date = start_date, end_date=end_date)
     google_searches = get_interest_over_time(keyword, start_date = start_date, end_date=end_date)
+    #theen get dw mentions binned into the google dates output 
+    mixed_df = get_dw_timeseries(df_clean, keyword, google_searches, start_date = start_date)
 
-    # if google_searches.empty: 
-    #     print('Exiting...')
-    #     return -1
-    #datetime_object saved in column 'dt_lastModifiedDate' of df
-    # pdb.set_trace()
-    dw_mentions = dw_mentions[:google_searches.values.shape[0]] 
-    google_searches = google_searches[:dw_mentions.shape[0]] 
-
-    #REMOVE THIS LATER when weeks are matched perfectly e.g.: usign resample or using googles dats
-    assert dw_mentions.shape[0] == google_searches.values.shape[0]
-
-    #let's make plot 
     fig, ax = plt.subplots(figsize=(15,10))
-
-    fig, ax = plot_signals(dw_mentions, google_searches, fig, ax, keyword = keyword)
+    fig, ax = plot_signals(mixed_df, fig, ax, keyword = keyword)
     
     # ax.plot(dw_mentions.val.values - np.mean(dw_mentions.val.values))
     # ax.plot(google_searches.values - np.mean(google_searches.values))
