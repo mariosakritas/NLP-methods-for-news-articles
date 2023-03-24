@@ -21,8 +21,12 @@ import datetime as d
 from collections import Counter
 import click
 import pdb
-import sys, traceback
+import traceback
 import rapidfuzz.process as rp
+import sys
+sys.path.append('../src/')
+from data.preprocess_keywords import make_cleaned_keywords_df
+from data.make_datasets import get_data
 
 
 GET_METHOD='get'
@@ -65,7 +69,7 @@ def load_data(data_dir, keep=['id', 'keywordStrings', 'lastModifiedDate', 'categ
     df = df[keep]
     return df
 
-def truncate_data(df, start_date, end_date): #TODO ?needs fixing to include specific dates 
+def truncate_data(df, start_date, end_date): 
     df['dt_lastModifiedDate'] = df.lastModifiedDate.apply(lambda x: d.datetime.strptime(x[:10], '%Y-%m-%d') if x is not None else x)
     start_dt = d.datetime.strptime(start_date, '%Y-%m-%d')
     end_dt = d.datetime.strptime(end_date, '%Y-%m-%d')
@@ -73,9 +77,13 @@ def truncate_data(df, start_date, end_date): #TODO ?needs fixing to include spec
     df_subset = df[mask]
     return df_subset
 
-#TODO fill in this function based on Anyas and Magda's input
-# def clean_df(df):
-#     return clean_df
+def clean_data(data_file, start_date = '2019-01-01', end_date = '2022-01-01'):
+    ##CHANGE THESE DATES IF YOU WANT TO PRE-PROCESS A LARGER PART OF THEE DATASET
+    # Load and extract data within time range
+    df_subset = get_data(data_file, start_date, end_date)
+    # Cleans keywords and saves data as a dataframe
+    clean_df = make_cleaned_keywords_df(df_subset, start_date, end_date)
+    return clean_df
 
 def extract_keywords(df):
     keywords = np.asarray(list(set([val for sublist in df['keywordStringsCleanAfterFuzz'] for val in sublist])))
@@ -151,15 +159,8 @@ def get_all_weeks(start_dt, end_dt):
     return sorted(all_weeks)
 
 def get_dw_timeseries(df_clean, keyword, google, start_date = '2019-01-01'):
-    #TODO: check this function after replacing loop 
-    # start_date = d.datetime.strptime(start_date, '%Y-%m-%d')
-    # end_date = d.datetime.strptime(end_date, '%Y-%m-%d')
-    keyword_indices = [] #TODO: do this without a loop (create extra boolean column and assign True if keyword is there)
-    for row in enumerate(df_clean['keywordStringsCleanAfterFuzz']):
-        if keyword not in row:
-            df_clean.drop(row)
-            keyword_indices.append(i)
-    df_clean = df_clean.loc[keyword_indices, :] #keep only rows where we havee a mention 
+    df_clean['present'] = df_clean['keywordStringsCleanAfterFuzz'].apply(lambda x:True if keyword in x else False)
+    df_clean = df_clean.loc[df_clean['present']]
     df_clean['ts'] = pd.to_datetime(df_clean.lastModifiedDate,format= '%Y-%m-%d' )
     dw_mentions = []
     edges = list(google.index) #extract time indices
@@ -182,6 +183,15 @@ def plot_signals(mixed_df, fig, ax, keyword = 'keyword'):
     ax2 = ax.twinx()
     ax2.plot(mixed_df.index, mixed_df.google, color = 'r', alpha =0.5) #may need to add .astype(str)
     ax2.set_ylabel(f'Relative amount of Google Searches for {keyword}', color = 'r', fontsize = 20)
+    mixed_df.google = mixed_df.google.apply(lambda x: x-mixed_df.google.mean())
+    mixed_df.dw = mixed_df.dw.apply(lambda x: x-mixed_df.dw.mean())
+
+    gc_res = grangercausalitytests(mixed_df, 5)
+    #look into gc_res and find the best shift
+    
+    #print it onto the plot if it's signifcant 
+
+
     return fig, ax
 
 def remove_spaces(keyword):
@@ -204,56 +214,56 @@ def find_similar_keywords(keyword, df):
 def cli():
     pass
 
-@click.command(name='extract-google-trends')
-@click.argument('db_path', type=click.Path(exists=True))
-@click.option('--output', '-o', default=None)
-@click.option('--overwrite', default=False)
-def cli_extract_google_trends(db_path=None,
-                        output=None,
-                        overwrite=False
-                        ):
-    '''This function takes in the DW keywords and iterativeely 
-    searchs for them for historical data on the Google API
-    then outputs a new df containing all of them 
+# @click.command(name='extract-google-trends')
+# @click.argument('db_path', type=click.Path(exists=True))
+# @click.option('--output', '-o', default=None)
+# @click.option('--overwrite', default=False)
+# def cli_extract_google_trends(db_path=None,
+#                         output=None,
+#                         overwrite=False
+#                         ):
+#     '''This function takes in the DW keywords and iterativeely 
+#     searchs for them for historical data on the Google API
+#     then outputs a new df containing all of them 
     
-    Need to select appropriate temporal resolution. for this amount of time, google gives weekly searches by default
-    '''
-    #UNCOMMENT WHEN READY TO RUN PROPERLY
-    df = pd.read_json(db_path, orient ='split', compression = 'infer')
-    if 'keywordStringsCleanAfterFuzz' not in df.columns or overwrite:
-        #let's load entire dataset and create keyword list from scratch 
-        df = load_data(db_path, keep=['id', 'keywordStrings', 'lastModifiedDate'])
-        df = truncate_data(df) #let's keep entiree dataset for now?
-        df = clean_df(df)
-        clean_file_name = 'cleaned_df.npz'
-        np.save(op.join(output, clean_file_name), df)
-    else:
-        # df = df[['id', 'cleanedKeywords', 'lastModifiedDate']]
-        pass
+#     Need to select appropriate temporal resolution. for this amount of time, google gives weekly searches by default
+#     '''
+#     #UNCOMMENT WHEN READY TO RUN PROPERLY
+#     df = pd.read_json(db_path, orient ='split', compression = 'infer')
+#     if 'keywordStringsCleanAfterFuzz' not in df.columns or overwrite:
+#         #let's load entire dataset and create keyword list from scratch 
+#         df = load_data(db_path, keep=['id', 'keywordStrings', 'lastModifiedDate'])
+#         df = truncate_data(df) #let's keep entiree dataset for now?
+#         df = clean_df(df)
+#         clean_file_name = 'cleaned_df.npz'
+#         np.save(op.join(output, clean_file_name), df)
+#     else:
+#         # df = df[['id', 'cleanedKeywords', 'lastModifiedDate']]
+#         pass
 
-    #make keywords into df and use .apply to get google dicts 
-    df = df.loc[0:5, :] #slicing just to test
-    keywords = list(itertools.chain(*list(df['keywordStringsCleanAfterFuzz'])))
-    kw_df = pd.DataFrame({'keywords':keywords})
-    # pdb.set_trace()
-    kw_df['google_trends'] = kw_df['keywords'].apply(get_interest_over_time)#, args =(start_date='2019-01-01', end_date='2022-01-01')
+#     #make keywords into df and use .apply to get google dicts 
+#     df = df.loc[0:5, :] #slicing just to test
+#     keywords = list(itertools.chain(*list(df['keywordStringsCleanAfterFuzz'])))
+#     kw_df = pd.DataFrame({'keywords':keywords})
+#     # pdb.set_trace()
+#     kw_df['google_trends'] = kw_df['keywords'].apply(get_interest_over_time)#, args =(start_date='2019-01-01', end_date='2022-01-01')
 
-    #TODO: decide if you will make many dataframes inside original df or one big one with dates an index- 
-    # thee second is easy to get from the first one
-    # e.g.: new_big_df = pd.DataFrame({kw_df['keywords']: kw_df['google_trends']})
+#     #TODO: decide if you will make many dataframes inside original df or one big one with dates an index- 
+#     # thee second is easy to get from the first one
+#     # e.g.: new_big_df = pd.DataFrame({kw_df['keywords']: kw_df['google_trends']})
     
-    google_kw_file_name = 'dw_keywords_google_searches.npz'
-    print('DFs with google searches saved at: ', op.join(output,google_kw_file_name))
-    np.savez(op.join(output, google_kw_file_name), kw_df)
+#     google_kw_file_name = 'dw_keywords_google_searches.npz'
+#     print('DFs with google searches saved at: ', op.join(output,google_kw_file_name))
+#     np.savez(op.join(output, google_kw_file_name), kw_df)
 
-cli.add_command(cli_extract_google_trends)
+# cli.add_command(cli_extract_google_trends)
 
 
 
 @click.command(name='dw-vs-google')
-@click.argument('df_clean_path', type=click.Path(exists=True))
+@click.option('df_clean_path', type=click.Path(exists=True))
 @click.option('--output', '-o', default=None)
-@click.option('--overwrite', default=False)
+@click.option('--overwrite', '-O', default=False)
 def cli_dw_vs_google(df_clean_path=None, # need this to make the timeseries
                         output=None,
                         overwrite=False
@@ -275,12 +285,16 @@ def cli_dw_vs_google(df_clean_path=None, # need this to make the timeseries
     TODO develop creative visualization methods 
     '''
     #let's load dataset: this should be clean from previous function
-    try:
-        df_clean = load_data(df_clean_path, keep=['id', 'lastModifiedDate', 'keywordStringsCleanAfterFuzz'])
-    except:
-        traceback.print_exc()
-        print('This dataset has not been cleaned! Please clean dataset before running this function.')
-        return -1
+    if df_clean_path is None or overwrite:
+        data_dir = '/home/marios/data/CMS_2010_to_June_2022_ENGLISH.json'
+        df_clean = clean_data(data_dir)
+    elif df_clean_path:
+        try:
+            df_clean = load_data(df_clean_path, keep=['id', 'lastModifiedDate', 'keywordStringsCleanAfterFuzz'])
+        except:
+            traceback.print_exc()
+            print('This dataset has not been cleaned! Please clean dataset before running this function or add option --overwrite to clean now.')
+            return -1
 
     unique_kws = extract_keywords(df_clean)
     keyword = remove_spaces(str(input('Please input keyword to be analyzed:\n')).lower())
@@ -296,27 +310,28 @@ def cli_dw_vs_google(df_clean_path=None, # need this to make the timeseries
     #theen get dw mentions binned into the google dates output 
     mixed_df = get_dw_timeseries(df_clean, keyword, google_searches, start_date = start_date)
 
-    fig, ax = plt.subplots(figsize=(15,10))
-    fig, ax = plot_signals(mixed_df, fig, ax, keyword = keyword)
+    fig, axar = plt.subplots(nrows =1, ncols =2, figsize=(20,20))
+    ax1 = axar[0]
+    fig, ax1 = plot_signals(mixed_df, fig, ax1, keyword = keyword)
+    gc_res = grangercausalitytests(mix_df, 5)
+    if p-v
+    ax2 = axar[1]
+    fig, ax2 = plot_more_stuff(...)
+
+    # 2) Granger 'Causality': do dw articles follow closely after google searches
+    # gc_res = grangercausalitytests(mix_df, 5)
     
     # ax.plot(dw_mentions.val.values - np.mean(dw_mentions.val.values))
     # ax.plot(google_searches.values - np.mean(google_searches.values))
 
-    # 2) Granger 'Causality': do dw articles follow closely after google searches
-    # google_searches = google_searches.values
-    # mix_df = pd.DataFrame({'dw':dw, 'google':google})
-    # gc_res = grangercausalitytests(mix_df, 5)
-        # TODO: find any significant results and print/ report 
-        # TODO: implement more metrics to compare 
-        # TODO: plot graphs and metrics in a pdf?
+    #arange plots to leave space at the bottom for writting out the granger results. 
 
     # save it
     file_name = f'{keyword}_dw_vs_google.pdf'
     fig.savefig(op.join(output,file_name))
-    #TODO: decide if you will impose a limit on how many mentions and above you will create timeseries (based on output examples)
+
 
 cli.add_command(cli_dw_vs_google)
-
 
 
 
