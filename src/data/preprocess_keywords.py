@@ -29,22 +29,32 @@ def get_items_with_substring(lst_lst_keywords, substring):
 
 
 def make_cleaned_keywords_df(df_subset, start_date, end_date):
+    '''
+    Function to get a clean dataframe.
+    1. Extracts data within the specified range.
+    2. Cleans the keyword column
+    3. Cleans the category column
+    4. Saves the dataframe as a json file
 
+    '''
+
+    # Cleans keywords - ! Runs for 6min on 2019-2022 ! 
     lst_lst_keywords = list(df_subset.keywordStrings)
+    lst_lst_keywords_clean = basic_clean_keywords(lst_lst_keywords) # 1st (raw) cleaning
+    lst_lst_keywords_clean_replaced = standardize_keywords(lst_lst_keywords_clean) # 2nd cleaning - standardizes keywords (runs rapid fuzz and replaces) 
 
-    # First (raw) cleaning
-    lst_lst_keywords_clean = basic_clean_keywords(lst_lst_keywords)
-
-    # ! Runs for 6min on 2019-2022 ! - Second cleaning - standardizes keywords (runs rapid fuzz and replaces) 
-    lst_lst_keywords_clean_replaced = standardize_keywords(lst_lst_keywords_clean)
+    # Cleans categories
+    df_subset = clean_categories(df_subset)
 
     # Make a new dataframe
     list_ids = list(df_subset['id'])
     list_dates = list(df_subset['lastModifiedDate'])
     list_kws = list(df_subset['keywordStrings'])
+    list_categories = list(df_subset['cleanFocusCategory'])
     list_new_kws = lst_lst_keywords_clean_replaced
     
-    df_subset_new = pd.DataFrame(list(zip(list_ids, list_dates, list_kws, list_new_kws)), columns=['id', 'lastModifiedDate', 'keywordStrings', 'keywordStringsCleanAfterFuzz'])
+    df_subset_new = pd.DataFrame(list(zip(list_ids, list_dates, list_kws, list_new_kws, list_categories)), \
+                                 columns=['id', 'lastModifiedDate', 'keywordStrings', 'keywordStringsCleanAfterFuzz', 'cleanFocusCategory'])
 
     # Storing the data in JSON format
     filepath = '../data/interim/clean_keywords_' + start_date + '_' + end_date + '.json'
@@ -157,3 +167,34 @@ def standardize_keywords(lst_lst_keywords_clean):
         'to', len(set(list(chain(*lst_lst_keywords_replaced)))))
     
     return lst_lst_keywords_replaced
+
+
+def clean_categories(df):
+    ''' 
+    Cleans the category column of data frame df
+    1. Gets rid of the dictionary format
+    2. Extracts all the main (primary) categories
+
+    '''
+
+    # Makes a new column to get rid of the dictionary format
+    df['cleanFocusCategory'] = df['thematicFocusCategory'].apply(lambda x: x['name'] if x is not None else x)
+
+    # Convert all secondary categories into primary categories
+    children_dict = {'Architecture':'Culture', 'Design':'Culture', 'Film':'Culture', 'Arts':'Culture', 
+                    'Literature':'Culture', 'Music':'Culture', 'Dance':'Culture', 'Theater':'Culture',
+                    'Climate':'Nature and Environment',
+                    'Conflicts':'Politics', 'Terrorism':'Politics', 
+                    'Corruption':'Law and Justice', 'Crime':'Law and Justice', 'Rule of Law':'Law and Justice',
+                        'Press Freedom':'Law and Justice', 
+                    'Diversity':'Human Rights', 'Freedom of Speech':'Human Rights', 'Equality':'Human Rights', 
+                    'Soccer': 'Sports',
+                        'Trade':'Business', 'Globalization':'Business', 'Food Security':'Business'
+    }
+
+    secondary_cts = [val for val in children_dict.keys()]
+
+    # Replaces
+    df['cleanFocusCategory'] = df['cleanFocusCategory'].apply(lambda x: children_dict[x] if x in secondary_cts else x)
+
+    return df
