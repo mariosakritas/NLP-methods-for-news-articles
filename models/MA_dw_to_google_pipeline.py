@@ -28,36 +28,36 @@ sys.path.append('../src/')
 from data.preprocess_keywords import make_cleaned_keywords_df
 from data.make_datasets import get_data
 
-
-GET_METHOD='get'
-headers = {
-    'authority': 'trends.google.com',
-    'accept': 'application/json, text/plain, */*',
-    'accept-language': 'el-GR,el;q=0.9,en;q=0.8,es;q=0.7',
-    'content-type': 'application/json;charset=UTF-8',
-    'cookie': '__utma=10102256.1937595387.1677588086.1677588086.1678441622.2; __utmc=10102256; __utmz=10102256.1678441622.2.2.utmcsr=trends.google.com|utmccn=(referral)|utmcmd=referral|utmcct=/; __utmt=1; __utmb=10102256.13.9.1678442016068; CONSENT=YES+GB.en-GB+; HSID=AwrWd8APwv-yBWgzh; SSID=AeXCoum7ArBP5_-aa; APISID=CH4IjtEJhVzXdXGB/AFPE6uuFtOUDiSjnb; SAPISID=FcPgZF83fs0zxFml/Ad59_bwdrgg_kZ4q4; __Secure-1PAPISID=FcPgZF83fs0zxFml/Ad59_bwdrgg_kZ4q4; __Secure-3PAPISID=FcPgZF83fs0zxFml/Ad59_bwdrgg_kZ4q4; SID=TwhPHvTugfJu62Xh-HCJkOIPdoEDrL6q-6Eu9itbEI8mmKw9wzJdgT6c48lYdsNyN4E5xA.; __Secure-1PSID=TwhPHvTugfJu62Xh-HCJkOIPdoEDrL6q-6Eu9itbEI8mmKw9mFTrJ0j2r8zMRcq3v-A7Dg.; __Secure-3PSID=TwhPHvTugfJu62Xh-HCJkOIPdoEDrL6q-6Eu9itbEI8mmKw9xQIlYIR6TyZD2qXkeuopSA.; OGPC=19031986-1:; AEC=ARSKqsLpZW_sbZN2NdijlA8HPzuRHa1TPtYLHLGgaOIZpt8oJZL9PYZZYQ; SEARCH_SAMESITE=CgQI4ZcB; 1P_JAR=2023-03-10-09; NID=511=bYRTpZST7bJyL0z371h4Y79EMA1j9QqQFUpi8vJsSmiWdINx5gKruSDljEBAFfs9FYsxRrmP7vulT_MdtU2xEXQSW837vsgNY9s0i2WZAeFETmMEDrju3d_HgA2Wxy5DrFrIOaOiFu6LkpD7pY4wF4qrMZ38BzvW4NkYX_fUI7bFzHXsg24iHara1hPmPIXOSl6wQgsssfGHUntOI9PgY_eXaAEJbY7VgTr1hjNvEDlFSYOuzLvHSzo9kX9ALXA5-WOICbuLdAucZc3hJKo1dUKM51JCkzLsUHm99MWA86Icz-dmMW8ybQZhEUd2YgsBHHn5MV8uSVpcZ53n4_KL7r6sOpfWZ0ZXairmL3NH-hHz4Vyq; _gid=GA1.3.1682047475.1678441583; OTZ=6935626_48_48_123900_44_436380; _gat_gtag_UA_4401283=1; _ga=GA1.3.1937595387.1677588086; SIDCC=AFvIBn_I_znBUYDEoxfE1jUbrp_F8T607DZhlzI9o_gQoZmA4OxNjglOrH8Q8er3Cv4uzoWYkX9Z; __Secure-1PSIDCC=AFvIBn_Nhc9nywxJ_UrRYogvErcX48ygHEiBzjRRZtPe-mIwBTe_M7UbvKR4d-rAuhYyGJi-Dm0; __Secure-3PSIDCC=AFvIBn8vpeAOp5e0oAWBAETEzSClsyQlm3vQJhAQP7T7Z51q1K7zHDm_-CSGFEPasFw0sRHoJDU; _ga_VWZPXDNJJB=GS1.1.1678441583.2.1.1678442016.0.0.0',
-    'origin': 'https://trends.google.com',
-    'referer': 'https://trends.google.com/trends/explore?date=now%201-d&q=Adele&hl=en-GB',
-    'sec-ch-ua': '"Chromium";v="110", "Not A(Brand";v="24", "Google Chrome";v="110"',
-    'sec-ch-ua-arch': '"x86"',
-    'sec-ch-ua-bitness': '"64"',
-    'sec-ch-ua-full-version': '"110.0.5481.177"',
-    'sec-ch-ua-full-version-list': '"Chromium";v="110.0.5481.177", "Not A(Brand";v="24.0.0.0", "Google Chrome";v="110.0.5481.177"',
-    'sec-ch-ua-mobile': '?0',
-    'sec-ch-ua-model': '',
-    'sec-ch-ua-platform': '"macOS"',
-    'sec-ch-ua-platform-version': '"13.2.1"',
-    'sec-ch-ua-wow64': '?0',
-    'sec-fetch-dest': 'empty',
-    'sec-fetch-mode': 'cors',
-    'sec-fetch-site': 'same-origin',
-    'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36',
-    'x-client-data': 'CIq2yQEIprbJAQjEtskBCKmdygEIkufKAQiVocsBCPyqzAEI9/XMAQib/swBCI6MzQEIlZbNAQiols0BCOGXzQEI5JfNAQjzl80BCMyYzQEI2JjNAQjzmc0BCLSazQEI0uGsAg==',
-}
+def get_headers():
+    headers = {
+        'authority': 'trends.google.com',
+        'accept': 'application/json, text/plain, */*',
+        'accept-language': 'el-GR,el;q=0.9,en;q=0.8,es;q=0.7',
+        'content-type': 'application/json;charset=UTF-8',
+        'cookie': '__utma=10102256.1937595387.1677588086.1677588086.1678441622.2; __utmc=10102256; __utmz=10102256.1678441622.2.2.utmcsr=trends.google.com|utmccn=(referral)|utmcmd=referral|utmcct=/; __utmt=1; __utmb=10102256.13.9.1678442016068; CONSENT=YES+GB.en-GB+; HSID=AwrWd8APwv-yBWgzh; SSID=AeXCoum7ArBP5_-aa; APISID=CH4IjtEJhVzXdXGB/AFPE6uuFtOUDiSjnb; SAPISID=FcPgZF83fs0zxFml/Ad59_bwdrgg_kZ4q4; __Secure-1PAPISID=FcPgZF83fs0zxFml/Ad59_bwdrgg_kZ4q4; __Secure-3PAPISID=FcPgZF83fs0zxFml/Ad59_bwdrgg_kZ4q4; SID=TwhPHvTugfJu62Xh-HCJkOIPdoEDrL6q-6Eu9itbEI8mmKw9wzJdgT6c48lYdsNyN4E5xA.; __Secure-1PSID=TwhPHvTugfJu62Xh-HCJkOIPdoEDrL6q-6Eu9itbEI8mmKw9mFTrJ0j2r8zMRcq3v-A7Dg.; __Secure-3PSID=TwhPHvTugfJu62Xh-HCJkOIPdoEDrL6q-6Eu9itbEI8mmKw9xQIlYIR6TyZD2qXkeuopSA.; OGPC=19031986-1:; AEC=ARSKqsLpZW_sbZN2NdijlA8HPzuRHa1TPtYLHLGgaOIZpt8oJZL9PYZZYQ; SEARCH_SAMESITE=CgQI4ZcB; 1P_JAR=2023-03-10-09; NID=511=bYRTpZST7bJyL0z371h4Y79EMA1j9QqQFUpi8vJsSmiWdINx5gKruSDljEBAFfs9FYsxRrmP7vulT_MdtU2xEXQSW837vsgNY9s0i2WZAeFETmMEDrju3d_HgA2Wxy5DrFrIOaOiFu6LkpD7pY4wF4qrMZ38BzvW4NkYX_fUI7bFzHXsg24iHara1hPmPIXOSl6wQgsssfGHUntOI9PgY_eXaAEJbY7VgTr1hjNvEDlFSYOuzLvHSzo9kX9ALXA5-WOICbuLdAucZc3hJKo1dUKM51JCkzLsUHm99MWA86Icz-dmMW8ybQZhEUd2YgsBHHn5MV8uSVpcZ53n4_KL7r6sOpfWZ0ZXairmL3NH-hHz4Vyq; _gid=GA1.3.1682047475.1678441583; OTZ=6935626_48_48_123900_44_436380; _gat_gtag_UA_4401283=1; _ga=GA1.3.1937595387.1677588086; SIDCC=AFvIBn_I_znBUYDEoxfE1jUbrp_F8T607DZhlzI9o_gQoZmA4OxNjglOrH8Q8er3Cv4uzoWYkX9Z; __Secure-1PSIDCC=AFvIBn_Nhc9nywxJ_UrRYogvErcX48ygHEiBzjRRZtPe-mIwBTe_M7UbvKR4d-rAuhYyGJi-Dm0; __Secure-3PSIDCC=AFvIBn8vpeAOp5e0oAWBAETEzSClsyQlm3vQJhAQP7T7Z51q1K7zHDm_-CSGFEPasFw0sRHoJDU; _ga_VWZPXDNJJB=GS1.1.1678441583.2.1.1678442016.0.0.0',
+        'origin': 'https://trends.google.com',
+        'referer': 'https://trends.google.com/trends/explore?date=now%201-d&q=Adele&hl=en-GB',
+        'sec-ch-ua': '"Chromium";v="110", "Not A(Brand";v="24", "Google Chrome";v="110"',
+        'sec-ch-ua-arch': '"x86"',
+        'sec-ch-ua-bitness': '"64"',
+        'sec-ch-ua-full-version': '"110.0.5481.177"',
+        'sec-ch-ua-full-version-list': '"Chromium";v="110.0.5481.177", "Not A(Brand";v="24.0.0.0", "Google Chrome";v="110.0.5481.177"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-model': '',
+        'sec-ch-ua-platform': '"macOS"',
+        'sec-ch-ua-platform-version': '"13.2.1"',
+        'sec-ch-ua-wow64': '?0',
+        'sec-fetch-dest': 'empty',
+        'sec-fetch-mode': 'cors',
+        'sec-fetch-site': 'same-origin',
+        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36',
+        'x-client-data': 'CIq2yQEIprbJAQjEtskBCKmdygEIkufKAQiVocsBCPyqzAEI9/XMAQib/swBCI6MzQEIlZbNAQiols0BCOGXzQEI5JfNAQjzl80BCMyYzQEI2JjNAQjzmc0BCLSazQEI0uGsAg==',
+    }
+    return headers
 
 class TrendReq(UTrendReq):
-    def _get_data(self, url, method=GET_METHOD, trim_chars=0, **kwargs):
-        return super()._get_data(url, method=GET_METHOD, trim_chars=trim_chars, headers=headers, **kwargs)
+    def _get_data(self, url, method='get', trim_chars=0, **kwargs):
+        return super()._get_data(url, method='get', trim_chars=trim_chars, headers=get_headers(), **kwargs)
 
 def load_data(data_dir, keep=['id', 'keywordStrings', 'lastModifiedDate', 'categories']):
     # Opening JSON file
@@ -87,23 +87,9 @@ def clean_data(data_file, start_date = '2019-01-01', end_date = '2022-01-01'):
 
 def extract_keywords(df):
     keywords = np.asarray(list(set([val for sublist in df['keywordStringsCleanAfterFuzz'] for val in sublist])))
-
     return keywords
 
 def get_interest_over_time(keyword, start_date = '2019-01-01', end_date=f'{date.today()}'):
-    #keywords needs to be a list 
-    #need to make sure the total number of characters is less than 100 for Google and terms are fewer than 5 
-    # terms = 0
-    # chars = 0
-    # for word in keywords:
-    #     chars += len(word)
-    #     if chars > 99:
-    #         break
-    #     else:
-    #         terms += 1
-    # if terms > 5:
-    #     terms = 5
-    # keywords = keywords[:terms]
     print(keyword)
     if len(keyword)>99:
         print('KEYWORD IS TOO LONG FOR THIS SEARCH')
@@ -120,43 +106,6 @@ def get_interest_over_time(keyword, start_date = '2019-01-01', end_date=f'{date.
         google_df = google_df.drop('isPartial', axis = 'columns')
 
     return google_df
-
-def get_all_weeks(start_dt, end_dt):
-    all_weeks = []
-    start_dt = d.datetime.strptime(start_dt, '%Y-%m-%d') #just making sure
-    end_dt = d.datetime.strptime(end_dt, '%Y-%m-%d')
-
-    if end_dt.strftime("%Y") < start_dt.strftime("%Y"):
-        print('End date should not be before start date. Please select different dates.')
-        return -1
-    
-    elif end_dt.strftime("%Y") > start_dt.strftime("%Y"):
-        #need to loop over years then weeks
-        for year in range(int(start_dt.strftime("%Y")), int(end_dt.strftime("%Y"))+1):
-            if year in [2006, 2012, 2017, 2023]:
-                weeks = 53
-            else:
-                weeks = 52
-            for week in range(1, weeks+1):
-                all_weeks.append(str(year)+str(week).zfill(2))
-        #now let's remove the ones before and after the required week
-        all_weeks = np.asarray(sorted([int(i) for i in all_weeks]))
-        mask = np.logical_and(all_weeks>=int(str(start_dt.strftime("%Y"))+str(start_dt.strftime("%W"))), 
-                              all_weeks<int(str(end_dt.strftime("%Y"))+str(end_dt.strftime("%W"))))
-        all_weeks = all_weeks[mask]
-        return [str(i) for i in all_weeks]
-    
-    elif end_dt.strftime("%Y") == start_dt.strftime("%Y"):
-        #we just need to loop over weeks 
-        if int(start_dt.strftime("%Y")) in [2006, 2012, 2017, 2023]:
-            weeks = 53
-        else:
-            weeks = 52
-        for week in range(int(start_dt.strftime("%W")), int(end_dt.strftime("%W"))+1):
-            all_weeks.append(str(start_dt.strftime("%Y"))+str(week).zfill(2))
-        return all_weeks
-    
-    return sorted(all_weeks)
 
 def get_dw_timeseries(df_clean, keyword, google, start_date = '2019-01-01'):
     df_clean['present'] = df_clean['keywordStringsCleanAfterFuzz'].apply(lambda x:True if keyword in x else False)
