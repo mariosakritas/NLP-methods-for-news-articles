@@ -49,12 +49,13 @@ def make_cleaned_keywords_df(df_subset, start_date, end_date):
     # Make a new dataframe
     list_ids = list(df_subset['id'])
     list_dates = list(df_subset['lastModifiedDate'])
+    list_only_dates = list(df_subset['Date'])
     list_kws = list(df_subset['keywordStrings'])
     list_categories = list(df_subset['cleanFocusCategory'])
     list_new_kws = lst_lst_keywords_clean_replaced
     
-    df_subset_new = pd.DataFrame(list(zip(list_ids, list_dates, list_kws, list_new_kws, list_categories)), \
-                                 columns=['id', 'lastModifiedDate', 'keywordStrings', 'keywordStringsCleanAfterFuzz', 'cleanFocusCategory'])
+    df_subset_new = pd.DataFrame(list(zip(list_ids, list_dates, list_only_dates, list_kws, list_new_kws, list_categories)), \
+                                 columns=['id', 'lastModifiedDate', 'Date', 'keywordStrings', 'keywordStringsCleanAfterFuzz', 'cleanFocusCategory'])
 
     # Storing the data in JSON format
     filepath = '../data/interim/clean_keywords_' + start_date + '_' + end_date + '.json'
