@@ -87,6 +87,7 @@ def basic_clean_keywords(lst_lst_keywords):
     lst_lst_keywords_clean = [list(map(lambda x: x.replace('.', ''), lst_kw)) for lst_kw in lst_lst_keywords_clean]
     lst_lst_keywords_clean = [list(map(lambda x: x.replace('" ', ''), lst_kw)) for lst_kw in lst_lst_keywords_clean]
     lst_lst_keywords_clean = [list(map(lambda x: x.replace('"', ''), lst_kw)) for lst_kw in lst_lst_keywords_clean]
+    lst_lst_keywords_clean = [list(map(lambda x: x.replace("'", ''), lst_kw)) for lst_kw in lst_lst_keywords_clean]
     lst_lst_keywords_clean = [list(map(lambda x: x.replace('keywords: ', ''), lst_kw)) for lst_kw in lst_lst_keywords_clean]
 
     # Remove leading and trailing whitespaces
