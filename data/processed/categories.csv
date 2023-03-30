@@ -1,0 +1,49 @@
+first_level,second_level,is_primary
+Cars and Transportation,Cars and Transportation,yes
+Education,Education,yes
+Learning German,Learning German,yes
+Digital World,Digital World,yes
+History,History,yes
+Society,Society,yes
+Health,Health,yes
+Religion,Religion,yes
+Catastrophe,Catastrophe,yes
+Culture,Culture,yes
+Culture,Architecture,no
+Culture,Design,no
+Culture,Film,no
+Culture,Arts,no
+Culture,Literature,no
+Culture,Music,no
+Culture,Dance,no
+Culture,Theater,no
+Lifestyle,Lifestyle,yes
+Media,Media,yes
+Migration,Migration,yes
+Nature and Environment,Nature and Environment,yes
+Climate,Climate,yes
+Offbeat,Offbeat,yes
+Politics,Politics,yes
+Politics,Conflicts,no
+Politics,Terrorism,no
+Law and Justice,Law and Justice,yes
+Law and Justice,Corruption,no
+Law and Justice,Crime,no
+Law and Justice,Rule of Law,no
+Law and Justice,Press Freedom,no
+Human Rights,Human Rights,yes
+Human Rights,Diversity,no
+Human Rights,Freedom of Speech,no
+Human Rights,Equality,no
+Travel,Travel,yes
+Sports,Sports,yes
+Sports,Soccer,no
+Technology,Technology,yes
+Innovation,Innovation,yes
+Business,Business,yes
+Business,Trade,no
+Business,Globalization,no
+Business,Food Security,no
+Science,Science,yes
+[Miscellaneous],[Miscellaneous],yes
+Video News,Video News,yes
