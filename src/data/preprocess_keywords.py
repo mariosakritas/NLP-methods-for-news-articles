@@ -64,7 +64,8 @@ def basic_clean_keywords(lst_lst_keywords):
     1. Lower case
     2. Splits keywords that have not been properly split
     3. Removes unicode and other unwanted symbols
-    4. Removes long sentences
+    4. Removes leading and trailing whitespaces
+    5. Removes long sentences
 
     """
 
@@ -87,6 +88,9 @@ def basic_clean_keywords(lst_lst_keywords):
     lst_lst_keywords_clean = [list(map(lambda x: x.replace('" ', ''), lst_kw)) for lst_kw in lst_lst_keywords_clean]
     lst_lst_keywords_clean = [list(map(lambda x: x.replace('"', ''), lst_kw)) for lst_kw in lst_lst_keywords_clean]
     lst_lst_keywords_clean = [list(map(lambda x: x.replace('keywords: ', ''), lst_kw)) for lst_kw in lst_lst_keywords_clean]
+
+    # Remove leading and trailing whitespaces
+    lst_lst_keywords_clean = [list(map(lambda x: x.strip(), lst_kw)) for lst_kw in lst_lst_keywords_clean]
 
     # Remove sentences (keywords that have more than 6 spaces)
     n_spaces = 6
