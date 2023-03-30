@@ -47,7 +47,7 @@ def make_cleaned_keywords_df(df_subset, start_date, end_date):
     df_subset = clean_categories(df_subset)
 
     # Make a new dataframe
-    df_subset_new = df_subset[['id', 'lastModifiedDate', 'Date', 'keywordStrings', 'cleanFocusParentCategory', 'cleanFocusCategory']].copy()
+    df_subset_new = df_subset[['id', 'lastModifiedDate', 'Date', 'keywordStrings', 'cleanFocusParentCategory', 'cleanFocusCategory', 'teaser']].copy()
     df_subset_new['keywordStringsCleanAfterFuzz'] = lst_lst_keywords_clean_replaced
 
     # Storing the data in JSON format
