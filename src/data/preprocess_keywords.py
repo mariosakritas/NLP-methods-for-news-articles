@@ -47,15 +47,8 @@ def make_cleaned_keywords_df(df_subset, start_date, end_date):
     df_subset = clean_categories(df_subset)
 
     # Make a new dataframe
-    list_ids = list(df_subset['id'])
-    list_dates = list(df_subset['lastModifiedDate'])
-    list_only_dates = list(df_subset['Date'])
-    list_kws = list(df_subset['keywordStrings'])
-    list_categories = list(df_subset['cleanFocusCategory'])
-    list_new_kws = lst_lst_keywords_clean_replaced
-    
-    df_subset_new = pd.DataFrame(list(zip(list_ids, list_dates, list_only_dates, list_kws, list_new_kws, list_categories)), \
-                                 columns=['id', 'lastModifiedDate', 'Date', 'keywordStrings', 'keywordStringsCleanAfterFuzz', 'cleanFocusCategory'])
+    df_subset_new = df_subset[['id', 'lastModifiedDate', 'Date', 'keywordStrings', 'cleanFocusParentCategory', 'cleanFocusCategory']].copy()
+    df_subset_new['keywordStringsCleanAfterFuzz'] = lst_lst_keywords_clean_replaced
 
     # Storing the data in JSON format
     filepath = '../data/interim/clean_keywords_' + start_date + '_' + end_date + '.json'
@@ -196,6 +189,6 @@ def clean_categories(df):
     secondary_cts = [val for val in children_dict.keys()]
 
     # Replaces
-    df['cleanFocusCategory'] = df['cleanFocusCategory'].apply(lambda x: children_dict[x] if x in secondary_cts else x)
+    df['cleanFocusParentCategory'] = df['cleanFocusCategory'].apply(lambda x: children_dict[x] if x in secondary_cts else x)
 
     return df
