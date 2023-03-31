@@ -7,14 +7,8 @@ import json
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-import matplotlib
-import functools
-import itertools
-import operator
-import os
 import os.path as op
 import numpy as np
-import pytrends
 from pytrends.request import TrendReq as UTrendReq
 from datetime import date
 import datetime as d
@@ -23,6 +17,7 @@ import click
 import pdb
 import traceback
 import rapidfuzz.process as rp
+#import src functions for getting and cleaning data 
 import sys
 sys.path.append('../src/')
 from data.preprocess_keywords import make_cleaned_keywords_df
@@ -259,22 +254,13 @@ def cli_dw_vs_google(df_clean_path=None, # need this to make the timeseries
     #theen get dw mentions binned into the google dates output 
     mixed_df = get_dw_timeseries(df_clean, keyword, google_searches, start_date = start_date)
 
-    fig, axar = plt.subplots(nrows =1, ncols =2, figsize=(20,20))
+    fig, axar = plt.subplots(nrows =1, ncols =1, figsize=(20,20))
     ax1 = axar[0]
     fig, ax1 = plot_signals(mixed_df, fig, ax1, keyword = keyword)
-    gc_res = grangercausalitytests(mix_df, 5)
-    if p-v
-    ax2 = axar[1]
-    fig, ax2 = plot_more_stuff(...)
-
+    
     # 2) Granger 'Causality': do dw articles follow closely after google searches
     # gc_res = grangercausalitytests(mix_df, 5)
     
-    # ax.plot(dw_mentions.val.values - np.mean(dw_mentions.val.values))
-    # ax.plot(google_searches.values - np.mean(google_searches.values))
-
-    #arange plots to leave space at the bottom for writting out the granger results. 
-
     # save it
     file_name = f'{keyword}_dw_vs_google.pdf'
     fig.savefig(op.join(output,file_name))
