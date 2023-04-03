@@ -260,7 +260,6 @@ def cli_dw_vs_google(df_clean_path=None, # need this to make the timeseries
     
     # 2) Granger 'Causality': do dw articles follow closely after google searches
     # gc_res = grangercausalitytests(mix_df, 5)
-    
     # save it
     file_name = f'{keyword}_dw_vs_google.pdf'
     fig.savefig(op.join(output,file_name))
