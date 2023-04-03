@@ -36,6 +36,14 @@ def make_cleaned_keywords_df(df_subset, start_date, end_date):
     3. Cleans the category column
     4. Saves the dataframe as a json file
 
+    Columns in output dataframe
+    cleanFocusParentCategory = Only the parent category (from src/preprocess_keywords.py function: clean_categories)
+    cleanFocusCategory = all categories
+    keywordStrings = raw keywords
+    keywordStringsCleanAfterFuzz = Cleaned keywords (from src/preprocess_keywords.py function: make_cleaned_keywords_df)
+    lastModifiedDate = raw date
+    Date = just the date (in datetime format)
+
     '''
 
     # Cleans keywords - ! Runs for 6min on 2019-2022 ! 

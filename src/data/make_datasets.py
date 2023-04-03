@@ -4,6 +4,7 @@ from pytrends.request import TrendReq as UTrendReq
 from datetime import date
 from pytrends.exceptions import ResponseError
 import time
+import numpy as np
 
 def get_data(data_file, start_date, end_date):
 
@@ -142,5 +143,20 @@ def get_daily_trending_searches(filepath = '../data/interim/',start_date = '2019
 
 
 
+def get_dw_timeseries(df_clean_input, keyword, google, start_date = '2019-01-01'):
+    df_clean = df_clean_input.copy()
+    df_clean['present'] = df_clean['keywordStringsCleanAfterFuzz'].apply(lambda x:True if keyword in x else False)
+    df_clean = df_clean.loc[df_clean['present']]
+    df_clean['ts'] = pd.to_datetime(df_clean.lastModifiedDate,format= '%Y-%m-%d' )
+    dw_mentions = []
+    edges = list(google.index) #extract time indices
+    edges.insert(0, start_date) #append the first one manually
+    edges = pd.to_datetime(edges,format= '%Y-%m-%d' ) # turn them all into pandas timestamps
+    for i, (start, end) in enumerate(zip(edges[:-1], edges[1:])):
+        mask = np.logical_and(df_clean.ts.dt.date >= start, df_clean.ts.dt.date<end)
+        dw_mentions.append(np.sum(mask))
+    google['dw'] = dw_mentions
+    google = google.rename(columns={keyword: 'google'})
 
+    return google
     
