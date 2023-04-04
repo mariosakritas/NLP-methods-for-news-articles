@@ -145,7 +145,8 @@ def get_daily_trending_searches(filepath = '../data/interim/',start_date = '2019
 
 def get_dw_timeseries(df_clean_input, keyword, google, start_date = '2019-01-01'):
     df_clean = df_clean_input.copy()
-    df_clean['present'] = df_clean['keywordStringsCleanAfterFuzz'].apply(lambda x:True if keyword in x else False)
+    df_clean['present'] = df_clean['keywordStringsCleanAfterFuzz'].apply(lambda x: any(keyword.lower() in word.lower() for word in x))
+    #df_clean['present'] = df_clean['keywordStringsCleanAfterFuzz'].apply(lambda x:True if keyword in x else False)
     df_clean = df_clean.loc[df_clean['present']]
     df_clean['ts'] = pd.to_datetime(df_clean.lastModifiedDate,format= '%Y-%m-%d' )
     dw_mentions = []
