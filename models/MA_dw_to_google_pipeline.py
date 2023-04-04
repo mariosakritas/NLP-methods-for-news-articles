@@ -103,7 +103,8 @@ def get_interest_over_time(keyword, start_date = '2019-01-01', end_date=f'{date.
     return google_df
 
 def get_dw_timeseries(df_clean, keyword, google, start_date = '2019-01-01'):
-    df_clean['present'] = df_clean['keywordStringsCleanAfterFuzz'].apply(lambda x:True if keyword in x else False)
+    # df_clean['present'] = df_clean['keywordStringsCleanAfterFuzz'].apply(lambda x:True if keyword in x else False)
+    df_clean['present'] = df_clean['keywordStringsCleanAfterFuzz'].apply(lambda x: any(keyword.lower() in word.lower() for word in x))
     df_clean = df_clean.loc[df_clean['present']]
     df_clean['ts'] = pd.to_datetime(df_clean.lastModifiedDate,format= '%Y-%m-%d' )
     dw_mentions = []
@@ -130,11 +131,9 @@ def plot_signals(mixed_df, fig, ax, keyword = 'keyword'):
     mixed_df.google = mixed_df.google.apply(lambda x: x-mixed_df.google.mean())
     mixed_df.dw = mixed_df.dw.apply(lambda x: x-mixed_df.dw.mean())
 
-    gc_res = grangercausalitytests(mixed_df, 5)
+    # gc_res = grangercausalitytests(mixed_df, 5)
     #look into gc_res and find the best shift
-    
     #print it onto the plot if it's signifcant 
-
 
     return fig, ax
 
@@ -205,7 +204,7 @@ def cli():
 
 
 @click.command(name='dw-vs-google')
-@click.option('df_clean_path', type=click.Path(exists=True))
+@click.option('--df_clean_path', type=click.Path(exists=True))
 @click.option('--output', '-o', default=None)
 @click.option('--overwrite', '-O', default=False)
 def cli_dw_vs_google(df_clean_path=None, # need this to make the timeseries
@@ -254,9 +253,8 @@ def cli_dw_vs_google(df_clean_path=None, # need this to make the timeseries
     #theen get dw mentions binned into the google dates output 
     mixed_df = get_dw_timeseries(df_clean, keyword, google_searches, start_date = start_date)
 
-    fig, axar = plt.subplots(nrows =1, ncols =1, figsize=(20,20))
-    ax1 = axar[0]
-    fig, ax1 = plot_signals(mixed_df, fig, ax1, keyword = keyword)
+    fig, axar = plt.subplots(nrows =1, ncols =1, figsize=(15,10))
+    fig, axar = plot_signals(mixed_df, fig, axar, keyword = keyword)
     
     # 2) Granger 'Causality': do dw articles follow closely after google searches
     # gc_res = grangercausalitytests(mix_df, 5)
