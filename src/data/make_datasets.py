@@ -6,6 +6,7 @@ from pytrends.exceptions import ResponseError
 import time
 import numpy as np
 from random import randint
+import os
 
 def get_data(data_file, start_date, end_date):
 
@@ -180,4 +181,16 @@ def get_dw_timeseries(df_clean_input, keyword, google, start_date = '2019-01-01'
     google = google.rename(columns={keyword: 'google'})
 
     return google
+
+
+def save_txt(out_name,data_to_save):
+    from tqdm import tqdm
+    #!rm $out_name
+    if os.path.isfile(out_name):
+        os.remove(out_name)
+    with open(out_name,'a') as f:
+        for i,el in tqdm(enumerate(data_to_save)):
+            print(el,file=f)
+    input_file=out_name
+    return input_file
     
