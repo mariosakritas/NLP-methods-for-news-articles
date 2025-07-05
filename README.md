@@ -1,60 +1,64 @@
-# Pivigo Data Science Template
+# 🗞️ NLP Methods for News Articles
 
-_A recommended minimal project structure for doing and sharing data science work._
+This repository explores natural language processing (NLP) pipelines for analyzing news articles. The project includes text preprocessing, topic modeling, and language model–based classification using modern Python NLP tools.
+
+## 📁 Project Structure
+
+Spring23_DW/
+├── notebooks/ # Jupyter notebooks for main pipelines and experiments
+│ ├── pipeline1_main.ipynb
+│ ├── pipeline2_main.ipynb
+│ └── suplementary/, outdated/
+├── data/ # Input and intermediate data
+├── models/ # Saved models (if any)
+├── src/ # Source code (functions, scripts)
+├── reports/ # Outputs (charts, metrics, tables)
+├── requirements.txt # Python dependencies
+├── .gitignore
+└── README.md
 
 
-This template is based on the good work from the [Cookiecutter project](http://drivendata.github.io/cookiecutter-data-science/). Please visit the website for a more detailed explanation of how to get the most out of the template and best practices in general. In particular, we strongly suggest that you work in the context of a virtual environment for this project. Please feel free to change the directory structure as you wish. 
+## 🧪 What the Pipelines Do
 
-The structure we have given you is a lightweight version of the full cookiecutter-data-science template. The full version includes a number of functionalities that are often not needed, such as a Makefile and setup scripts, as well as a .env file for holding keys. In some cases you may want this added functionality and may, therefore, substitute this template for the original cookiecutter-data-science template.
+### 🔹 `pipeline1_main.ipynb`
+- Loads and cleans raw text data
+- Tokenizes and vectorizes text
+- Applies classical NLP methods like TF-IDF and LDA
+- Visualizes topic distributions and clusters
+
+### 🔹 `pipeline2_main.ipynb`
+- Fine-tunes and evaluates transformer-based models (e.g., BERT)
+- Performs zero-shot or few-shot classification
+- Includes plotting of prediction confidence and topic distribution
 
 
-The directory structure of your new project looks like this: 
 
-```
-├── README.md          <- The top-level README for developers using this project.
-├── data
-│   ├── external       <- Data from third party sources.
-│   ├── interim        <- Intermediate data that has been transformed.
-│   ├── processed      <- The final, canonical data sets for modeling.
-│   └── raw            <- The original, immutable data dump.
-│
-├── models             <- Trained and serialized models, model predictions, or model summaries
-│
-├── notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering),
-│                         the creator's initials, and a short `-` delimited description, e.g.
-│                         `1.0-jqp-initial-data-exploration`.
-│
-├── references         <- Data dictionaries, manuals, and all other explanatory materials.
-│
-├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
-│   └── figures        <- Generated graphics and figures to be used in reporting
-│
-├── requirements.txt   <- The requirements file for reproducing the analysis environment, e.g.
-│                         generated with `pip freeze > requirements.txt`
-│
-├── src                <- Source code for use in this project.
-    ├── data           <- Scripts to download or generate data
-    │   └── make_dataset.py
-    │
-    ├── features       <- Scripts to turn raw data into features for modeling
-    │   └── build_features.py
-    │
-    ├── models         <- Scripts to train models and then use trained models to make
-    │   │                 predictions
-    │   ├── predict_model.py
-    │   └── train_model.py
-    │
-    └── visualization  <- Scripts to create exploratory and results oriented visualizations
-        └── visualize.py
+🚀 Running the Project
+Open notebooks/pipeline1_main.ipynb to explore classical NLP methods
 
-```
+Open notebooks/pipeline2_main.ipynb to explore transformer-based models
 
-## Contributing
+Outputs will be saved in reports/ or models/
 
-The creators of the Cookiecutter project welcome contributions! [See the docs for guidelines](https://drivendata.github.io/cookiecutter-data-science/#contributing).
+🧰 Dependencies
+Main Python libraries used:
 
-### Installing development requirements
-------------
+transformers
 
-    pip3 install -r requirements.txt
+scikit-learn
+
+pandas, numpy
+
+matplotlib, seaborn
+
+jupyter
+
+python-dotenv
+
+See requirements.txt for the full list.
+
+📄 License
+This project is for educational and research purposes. Please cite appropriately if reused.
+
+
 
